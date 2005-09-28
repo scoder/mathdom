@@ -1,0 +1,2 @@
+include setup.py README LICENSE
+recursive-include src *.py
