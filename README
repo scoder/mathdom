@@ -1,0 +1,35 @@
+MathDOM - accessing terms through a MathML DOM in Python
+--------------------------------------------------------
+
+There is not much here yet. If you're interested, send me an email:
+Stefan Behnel <scoder@users.sourceforge.net>
+
+I'd be really glad to hear if this is useful. And maybe you have an
+idea how to make it better.
+
+
+What is MathDOM?
+----------------
+
+The package comprises parsers for a subset of Content MathML 2.0 and
+infix terms. It provides access to the term tree through a DOM (based
+on PyXML/4DOM) and allows serialization to Content MathML and literal
+terms in infix or postfix notation.
+
+If you want to test it, run any of the three main files from the "src"
+directory.
+
+
+The files:
+----------
+
+mathdom.py    - the DOM implemention
+
+termparser.py - parser/serializer for literal terms
+
+xmlterm.py    - SAX generator for the termparser AST
+
+setup.py      - distutils, try "python setup.py install"
+
+
+Have fun!
