@@ -29,12 +29,14 @@ print
 try:
     try:
         doc = MathDOM.fromMathmlSax(term, TermSaxParser())
-    except ParseException:
+    except ParseException, e:
+        print "Parsing as term failed:", e
         doc = MathDOM.fromMathmlSax(term, BoolExpressionSaxParser())
-except ParseException:
+except ParseException, e:
+    print "Parsing as boolean expression failed:", e
     print "The term is not parsable, neither as arithmetic term not as boolean expression."
     sys.exit(0)
-    
+
 
 print "MATHML:"
 doc.toMathml(indent=True)
@@ -45,14 +47,10 @@ tree = dom_to_tree(doc)
 print tree
 print
 
-print "INFIX:"
-print infixof(tree)
-print
-
-print "PREFIX  :"
-print prefixof(tree)
-print
-
-print "POSTFIX:"
-print postfixof(tree)
-print
+for output_type in ('infix', 'prefix', 'postfix'):
+    try:
+        converter = tree_converters[output_type]
+        print "%s:" % output_type.upper().ljust(8),  converter.build(tree)
+        print
+    except KeyError:
+        print "unknown output type: '%s'" % output_type

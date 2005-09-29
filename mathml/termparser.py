@@ -8,7 +8,7 @@ __all__ = (
     'parse_bool_expression', 'parse_term',
     'TermBuilder', 'LiteralTermBuilder',
     'InfixTermBuilder', 'PrefixTermBuilder', 'PostfixTermBuilder',
-    'infixof', 'postfixof', 'prefixof',
+    'tree_converters',
     'ParseException'   # from pyparsing
     )
 
@@ -402,18 +402,42 @@ class PrefixTermBuilder(LiteralTermBuilder):
             return chain(repeat(operator, max(1, len(operands)-1)), operands)
 
 
-INFIX_TERM_BUILDER   = InfixTermBuilder()
-PREFIX_TERM_BUILDER  = PrefixTermBuilder()
-POSTFIX_TERM_BUILDER = PostfixTermBuilder()
+class OutputConversion(object):
+    """This object references the different converters."""
+    __CONVERTERS = {}
+    def __init__(self):
+        pass
 
-def infixof(tree):
-    return INFIX_TERM_BUILDER.build(tree)
+    def register_converter(self, output_type, converter):
+        "Register a converter for an output type."
+        self.__CONVERTERS[output_type] = converter
 
-def postfixof(tree):
-    return POSTFIX_TERM_BUILDER.build(tree)
+    def unregister_converter(self, output_type):
+        "Remove the registration for an output type."
+        del self.__CONVERTERS[output_type]
 
-def prefixof(tree):
-    return PREFIX_TERM_BUILDER.build(tree)
+    def known_types(self):
+        "Return the currently registered output types."
+        return self.__CONVERTERS.keys()
+
+    def convert_tree(self, tree, output_type):
+        "Convert a parse tree into a term of the given output type."
+        converter = self.__CONVERTERS[output_type]
+        return converter.build(tree)
+
+    def fortype(self, output_type):
+        "Return the converter for the given output type."
+        return self.__CONVERTERS.get(output_type)
+
+    def __getitem__(self, output_type):
+        return self.__CONVERTERS[output_type]
+
+
+tree_converters = OutputConversion()
+
+tree_converters.register_converter('infix',   InfixTermBuilder())
+tree_converters.register_converter('prefix',  PrefixTermBuilder())
+tree_converters.register_converter('postfix', PostfixTermBuilder())
 
 
 try:
@@ -437,11 +461,15 @@ if __name__ == '__main__':
     bool_term = "%(term)s = 1 or %(term)s > 5 and true" % {'term':term}
     print bool_term
     print
+
     parsed = parse_bool_expression(bool_term)
     print "PARSED :",  parsed
     print
-    print "INFIX  :",  infixof(parsed)
-    print
-    print "PREFIX  :", prefixof(parsed)
-    print
-    print "POSTFIX:",  postfixof(parsed)
+
+    for output_type in ('infix', 'prefix', 'postfix', 'should-fail'):
+        try:
+            converter = tree_converters[output_type]
+            print "%s:" % output_type.upper().ljust(8),  converter.build(parsed)
+            print
+        except KeyError:
+            print "unknown output type: '%s'" % output_type
