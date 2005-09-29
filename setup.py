@@ -1,7 +1,7 @@
 from distutils.core import setup
 setup(
     name='mathml',
-    version='0.1',
+    version='0.2',
     description='Python Distribution Utilities',
     author='Stefan Behnel',
     author_email='scoder@users.sourceforge.net',

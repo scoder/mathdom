@@ -5,7 +5,10 @@ Implementation of an infix term parser. Supports conversion to MathML.
 """
 
 __all__ = (
-    'parse_bool_expression', 'parse_term', 'infixof', 'postfixof',
+    'parse_bool_expression', 'parse_term',
+    'TermBuilder', 'LiteralTermBuilder',
+    'InfixTermBuilder', 'PrefixTermBuilder', 'PostfixTermBuilder',
+    'infixof', 'postfixof', 'prefixof'
     'ParseException'   # from pyparsing
     )
 
@@ -249,87 +252,168 @@ def parse_term(term):
         term = unicode(term, 'ascii')
     return CompleteArithmeticExpression.parseString(term)[0]
 
-__OPERATORS = [ op for ops in (ArithmeticParser.operator_order, '| in',
-                               BoolExpressionParser.cmp_operators, 'and xor or')
-                for op in ops.split() ]
 
-def infixof(tree):
-    infix_operator_order = __OPERATORS
-    max_affin = len(infix_operator_order)+1
-    def _recursive_infix(tree, parent_affin):
-        if len(tree) <= 1:
-            return tree
 
-        operator = tree[0]
+class TermBuilder(object):
+    OPERATOR_ORDER = [ op for ops in (ArithmeticParser.operator_order, '| in',
+                                      BoolExpressionParser.cmp_operators, 'and xor or')
+                       for op in ops.split() ]
+    OPERATOR_SET = frozenset(OPERATOR_ORDER)
+
+    def __init__(self):
+        self.__dispatcher = self._register_dispatchers({})
+
+    def _register_dispatchers(self, dispatcher_dict):
+        """Subclasses can modify the dictionary returned by this
+        method to register additional handlers.
+        Note that all handler methods must return iterables!"""
+        for name in dir(self):
+            if name.startswith('_handle_'):
+                method = getattr(self, name)
+                if callable(method):
+                    dispatcher_dict[ name[8:] ] = method
+        return dispatcher_dict
+
+    def build(self, tree):
+        status = self._init_build_status()
+        return ' '.join( self._recursive_build(tree, status) )
+
+    def _init_build_status(self):
+        return None
+
+    def _build_children(self, operator, children, status):
         if operator == 'name' or operator[:6] == 'const:':
-            return [ unicode(str(tree[1]), 'ascii') ]
+            return children
+        return [ ' '.join(operand)
+                 for operand in starmap(self._recursive_build, izip(children, repeat(status))) ]
 
+    def _handle(self, operator, operands, status):
+        "Unknown operators (including functions) end up here."
+        raise NotImplementedError, "_handle(%s)" % operator
+
+    def _handleOP(self, operator, operands, status):
+        "Arithmetic and boolean operators end up here. Default is to call self._handle()"
+        return self._handle(operator, operands, status)
+
+    def _recursive_build(self, tree, status):
+        dispatcher = self.__dispatcher
+        operator = tree[0]
+        operands = self._build_children(operator, tree[1:], status)
+
+        dispatch_name = operator.replace(':', '_') # const:*, list:*
+
+        dispatch = dispatcher.get(dispatch_name)
+        if dispatch:
+            return dispatch(operator, operands, status)
+
+        splitpos = operator.find(':')
+        if splitpos > 0:
+            dispatch = dispatcher.get(operator[:splitpos])
+            if dispatch:
+                return dispatch(operator, operands, status)
+
+        if operator in self.OPERATOR_SET:
+            return self._handleOP(operator, operands, status)
+        else:
+            return self._handle(operator, operands, status)
+
+
+class LiteralTermBuilder(TermBuilder):
+    def _handle_name(self, operator, operands, affin):
+        return [ unicode(str(operands[0]), 'ascii') ]
+
+    def _handle_const(self, operator, operands, affin):
+        return [ unicode(str(operands[0]), 'ascii') ]
+
+    def _handle_range(self, operator, operands, affin):
+        assert operator == 'range'
+        return [ u'(%s)' % u':'.join(operands) ]
+
+    def _handle_list(self, operator, operands, affin):
+        assert operator == 'list'
+        return [ u'(%s)' % u','.join(operands) ]
+
+
+class InfixTermBuilder(LiteralTermBuilder):
+    MAX_AFFIN = len(TermBuilder.OPERATOR_ORDER)+1
+    __operator_order = TermBuilder.OPERATOR_ORDER.index
+    def _init_build_status(self):
+        return (self.MAX_AFFIN, self.MAX_AFFIN)
+
+    def _build_children(self, operator, children, parent_affin):
         try:
-            order = infix_operator_order.index(operator)
-            is_operator = True
+            affin = self.__operator_order(operator)
         except ValueError:
             if operator == 'case':
-                order = max_affin
+                affin = self.MAX_AFFIN
             else:
-                order = parent_affin
-            is_operator = False
+                affin = parent_affin
+        my_affin = (affin, parent_affin[0])
+        return super(InfixTermBuilder, self)._build_children(operator, children, my_affin)
 
+    def _handle_case(self, operator, operands, affin):
+        assert operator == 'case'
+        result = [ 'CASE', 'WHEN', operands[0], 'THEN', operands[1] ]
+        if len(operands) > 2:
+            result.append('ELSE')
+            result.append(operands[2])
+        result.append('END')
+        return result
 
-        operands = [ ' '.join(operand)
-                     for operand in starmap(_recursive_infix, izip(tree[1:], repeat(order))) ]
-        if operator == 'range':
-            return [ u'(%s)' % u':'.join(operands) ]
-        elif operator[:5] == 'list:':
-            return [ u'(%s)' % u','.join(operands) ]
-        elif operator == 'case':
-            result = [ 'CASE', 'WHEN', operands[0], 'THEN', operands[1] ]
-            if len(operands) > 2:
-                result.append('ELSE')
-                result.append(operands[2])
-            result.append('END')
-            return result
-        elif len(operands) == 1:
-            if order > parent_affin:
-                return [ '(', operator, operands[0], ')' ]
-            else:
-                return [ operator, operands[0] ]
-        elif is_operator: # 1 + 2 + 3 + 4
-            if order > parent_affin:
-                return chain(chain(*zip(chain('(', repeat(operator)), operands)), ')')
-            else:
-                return chain((operands[0],), chain(*zip(chain(repeat(operator)),
-                                                        islice(operands,1,None))))
-        else: # function
-            return [ operator, '(', ','.join(operands), ')' ]
-    return ' '.join( _recursive_infix(tree, max_affin) )
+    def _handleOP(self, operator, operands, affin):
+        my_affin, parent_affin = affin
+        if my_affin > parent_affin:
+            return chain(chain(*zip(chain('(', repeat(operator)), operands)), ')')
+        else:
+            return chain((operands[0],), chain(*zip(chain(repeat(operator)),
+                                                    islice(operands,1,None))))
 
+    def _handle(self, operator, operands, affin):
+        return [ operator, '(', ','.join(operands), ')' ]
 
-def postfixof(tree):
-    def _recursive_postfix(tree):
-        if len(tree) <= 1:
-            return tree
+class PostfixTermBuilder(LiteralTermBuilder):
+    def _handle_case(self, operator, operands, _):
+        assert operator == 'case'
+        if len(operands) > 2:
+            operator = 'CASE_THEN_ELSE'
+        else:
+            operator = 'CASE_THEN'
+        return chain(reversed(operands), (operator,))
 
-        operator = tree[0]
-        if operator == 'name' or operator[:6] == 'const:':
-            return [ unicode(str(tree[1]), 'ascii') ]
-
-        operands = [ ' '.join(operand) for operand in imap(_recursive_postfix, tree[1:]) ]
-        if operator == 'range':
-            return [ u'(%s)' % u':'.join(operands) ]
-        elif operator[:5] == 'list:':
-            return [ u'(%s)' % u','.join(operands) ]
-        elif operator == 'case':
-            if len(operands) > 2:
-                operator = 'CASE_THEN_ELSE'
-            else:
-                operator = 'CASE_THEN'
-            return chain(reversed(operands), (operator,))
-        elif operator == '-' and len(operands) == 1:
+    def _handle(self, operator, operands, _):
+        if operator == '-' and len(operands) == 1:
             return [ operands[0], '+-' ]
         else:
-            return chain(operands[:2], (operator,),
-                         chain(*zip(islice(operands,2,None), repeat(operator))))
-    return ' '.join( _recursive_postfix(tree) )
+            return chain(operands, repeat(operator, max(1, len(operands)-1)))
+
+class PrefixTermBuilder(LiteralTermBuilder):
+    def _handle_case(self, operator, operands, _):
+        assert operator == 'case'
+        if len(operands) > 2:
+            operator = 'CASE_THEN_ELSE'
+        else:
+            operator = 'CASE_THEN'
+        return chain((operator,), reversed(operands))
+
+    def _handle(self, operator, operands, _):
+        if operator == '-' and len(operands) == 1:
+            return [ operands[0], '+-' ]
+        else:
+            return chain(repeat(operator, max(1, len(operands)-1)), operands)
+
+
+INFIX_TERM_BUILDER   = InfixTermBuilder()
+PREFIX_TERM_BUILDER  = PrefixTermBuilder()
+POSTFIX_TERM_BUILDER = PostfixTermBuilder()
+
+def infixof(tree):
+    return INFIX_TERM_BUILDER.build(tree)
+
+def postfixof(tree):
+    return POSTFIX_TERM_BUILDER.build(tree)
+
+def prefixof(tree):
+    return PREFIX_TERM_BUILDER.build(tree)
 
 
 try:
@@ -354,8 +438,10 @@ if __name__ == '__main__':
     print bool_term
     print
     parsed = parse_bool_expression(bool_term)
-    print "PARSED :", parsed
+    print "PARSED :",  parsed
     print
-    print "INFIX  :", infixof(parsed)
+    print "INFIX  :",  infixof(parsed)
     print
-    print "POSTFIX:", postfixof(parsed)
+    print "PREFIX  :", prefixof(parsed)
+    print
+    print "POSTFIX:",  postfixof(parsed)
