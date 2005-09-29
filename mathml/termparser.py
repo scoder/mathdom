@@ -255,6 +255,7 @@ def parse_term(term):
 
 
 class TermBuilder(object):
+    "Abstract superclass for term builders."
     OPERATOR_ORDER = [ op for ops in (ArithmeticParser.operator_order, '| in',
                                       BoolExpressionParser.cmp_operators, 'and xor or')
                        for op in ops.split() ]
@@ -275,6 +276,7 @@ class TermBuilder(object):
         return dispatcher_dict
 
     def build(self, tree):
+        "Call this method to build the term representation."
         status = self._init_build_status()
         return ' '.join( self._recursive_build(tree, status) )
 
@@ -319,6 +321,7 @@ class TermBuilder(object):
 
 
 class LiteralTermBuilder(TermBuilder):
+    "Abstract superclass for literal term builders."
     def _handle_name(self, operator, operands, affin):
         return [ unicode(str(operands[0]), 'ascii') ]
 
@@ -335,6 +338,7 @@ class LiteralTermBuilder(TermBuilder):
 
 
 class InfixTermBuilder(LiteralTermBuilder):
+    "Convert the parse tree into a literal infix term."
     MAX_AFFIN = len(TermBuilder.OPERATOR_ORDER)+1
     __operator_order = TermBuilder.OPERATOR_ORDER.index
     def _init_build_status(self):
@@ -372,6 +376,7 @@ class InfixTermBuilder(LiteralTermBuilder):
         return [ operator, '(', ','.join(operands), ')' ]
 
 class PostfixTermBuilder(LiteralTermBuilder):
+    "Convert the parse tree into a literal postfix term."
     def _handle_case(self, operator, operands, _):
         assert operator == 'case'
         if len(operands) > 2:
@@ -387,6 +392,7 @@ class PostfixTermBuilder(LiteralTermBuilder):
             return chain(operands, repeat(operator, max(1, len(operands)-1)))
 
 class PrefixTermBuilder(LiteralTermBuilder):
+    "Convert the parse tree into a literal prefix term."
     def _handle_case(self, operator, operands, _):
         assert operator == 'case'
         if len(operands) > 2:
@@ -403,7 +409,7 @@ class PrefixTermBuilder(LiteralTermBuilder):
 
 
 class OutputConversion(object):
-    """This object references the different converters."""
+    "Object of this class are used to reference the different converters."
     __CONVERTERS = {}
     def __init__(self):
         pass
@@ -449,9 +455,8 @@ except:
     pass
 
 
-# Test
-
 if __name__ == '__main__':
+    # Test
     term = ".1*pi+2*(1+3i)-5.6-6*-1/sin(-45*a.b) * CASE WHEN 3|12 THEN 1+3 ELSE e^(4*1) END + 1"
     print term
     print

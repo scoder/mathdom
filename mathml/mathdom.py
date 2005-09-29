@@ -230,7 +230,9 @@ setupDefaults()
 class Qualifier(object):
     def __init__(self, name, valid_elements):
         self.name = name
-        self.valid_elements = frozenset(valid_elements.split())
+        if isinstance(valid_elements, (str, unicode)):
+            valid_elements = valid_elements.split()
+        self.valid_elements = frozenset(valid_elements)
         self.__ACCESS_ERROR = "This element does not support the qualifier %s" % name
 
     def __find_qualifier(self, node):

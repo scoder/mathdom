@@ -4,7 +4,8 @@
 Implementation of SAX parser for infix terms.
 """
 
-__all__ = ('BoolExpressionSaxParser', 'TermSaxParser', 'dom_to_tree')
+__all__ = ('BoolExpressionSaxParser', 'TermSaxParser',
+           'dom_to_tree', 'serialize_dom', 'tree_converters')
 
 try:
     from psyco.classes import *
@@ -16,7 +17,7 @@ from xml.sax.xmlreader import XMLReader, AttributesNSImpl
 from xml.sax.handler import feature_namespaces
 
 from mathdom import MATHML_NAMESPACE_URI
-from termparser import parse_bool_expression, parse_term
+from termparser import parse_bool_expression, parse_term, tree_converters
 
 def mkstr(value):
     if isinstance(value, (str, unicode)):
@@ -55,6 +56,7 @@ class SaxTerm(XMLReader):
     map_constant = _ELEMENT_CONSTANT_MAP.get
 
     def __init__(self, sax_parser=None):
+        XMLReader.__init__(self)
         if sax_parser:
             self.setContentHandler(sax_parser)
 
@@ -150,6 +152,24 @@ class SaxTerm(XMLReader):
         parser.endElementNS(tag, name)
 
 
+# main module functions:
+
+# OUTPUT:
+
+def serialize_dom(domdocument, output_format=None, converter=None):
+    """Serialize a MathDOM document into a term.
+
+    You can specify either a converter or an output format. If neither
+    of the two is given, it defaults to the 'infix' converter.
+    """
+    if output_format is None:
+        output_format = 'infix'
+    if converter is None:
+        converter = tree_converters.fortype(output_format)
+    tree = dom_to_tree(domdocument)
+    return converter.build(tree)
+
+
 def dom_to_tree(doc):
     map_operator = dict((v,n) for (n,v) in _FUNCTION_MAP.iteritems()).get
     map_constant = dict((v,n) for (n,v) in _ELEMENT_CONSTANT_MAP.iteritems()).get
@@ -218,40 +238,37 @@ def dom_to_tree(doc):
         return tree
 
 
-# main module functions:
+# INPUT:
 
 class BoolExpressionSaxParser(SaxTerm):
+    "Parse a boolean expression into SAX events."
     def parse(self, expression):
         if hasattr(expression, 'getCharacterStream'): # InputSource?
             stream = expression.getCharacterStream()
-            if not stream:
+            if stream:
+                expression = stream
+            else:
                 expression = expression.getByteStream()
         if hasattr(expression, 'read'): # StringIO?
             expression = expression.read()
         self.tree_to_sax( parse_bool_expression(expression) )
 
 class TermSaxParser(SaxTerm):
+    "Parse a term into SAX events."
     def parse(self, term):
         if hasattr(term, 'getCharacterStream'): # InputSource?
             stream = term.getCharacterStream()
-            if not stream:
+            if stream:
+                term = stream
+            else:
                 term = term.getByteStream()
         if hasattr(term, 'read'): # StringIO?
             term = term.read()
         self.tree_to_sax( parse_term(term) )
 
-def expression_to_sax(expression, parser):
-    tree_to_sax(parse_bool_expression(expression), parser)
-
-def term_to_sax(term, parser):
-    tree_to_sax(parse_term(term), parser)
-
-def tree_to_sax(tree, parser):
-    saxer = SaxTerm(parser)
-    saxer.tree_to_sax(tree)
-
 
 if __name__ == '__main__':
+    # Test
     term = ".1*pi+2*3-5.6-6*-1/sin(-45*a.b) * CASE WHEN 3|12 THEN 1+3 ELSE e^(4*1) END + 1"
     bool_term = "%(term)s = 1 or %(term)s > 5 and true" % {'term':term}
 
