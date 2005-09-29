@@ -7,14 +7,20 @@ Stefan Behnel <scoder@users.sourceforge.net>
 I'd be really glad to hear if this is useful. And maybe you have an
 idea how to make it better. :)
 
+See LICENSE file for licensing.
+
+You can find the most up-to-date version at
+http://mathdom.sourceforge.net
+
 
 What is MathDOM?
 ----------------
 
 The package comprises parsers for a subset of Content MathML 2.0 and
-infix terms. It provides access to the term tree through a DOM (based
-on PyXML/4DOM) and allows serialization to Content MathML and literal
-terms in infix, prefix and postfix notation.
+infix terms (using pyparsing [1]). It provides access to the term tree
+through a DOM (based on PyXML/4DOM [2]) and allows serialization to
+Content MathML and literal terms in infix, prefix and postfix
+notation.
 
 If you want to test it, run any of the three main files from the "src"
 directory.
@@ -44,6 +50,13 @@ src/xmlterm.py    - SAX generator for the termparser AST
 
 src/termparser.py - parser/serializer for literal terms,
                     framework for converters
+
+
+References
+----------
+
+[1] pyparsing: http://pyparsing.sf.net
+[2] PyXML:     http://pyxml.sf.net
 
 
 Have fun!
