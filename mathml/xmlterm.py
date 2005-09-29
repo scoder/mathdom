@@ -171,6 +171,7 @@ def serialize_dom(domdocument, output_format=None, converter=None):
 
 
 def dom_to_tree(doc):
+    "Convert DOM document into AST."
     map_operator = dict((v,n) for (n,v) in _FUNCTION_MAP.iteritems()).get
     map_constant = dict((v,n) for (n,v) in _ELEMENT_CONSTANT_MAP.iteritems()).get
     def _recursive_piecewise(piecewise):

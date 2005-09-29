@@ -28,13 +28,15 @@ The files:
 setup.py          - distutils, try "python setup.py install"
 
 
-* Examples in "examples/":
+* Examples are in "examples/":
 
 examples/infix.py - example program: read a term, write out MathML,
                     infix, prefix, postfix representations
+                    -> START HERE if you want to figure out how
+                    everything works.
 
 
-* The actual package source in "src/":
+* The actual package source is in "src/":
 
 src/mathdom.py    - the DOM implemention
 
