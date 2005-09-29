@@ -8,7 +8,7 @@ __all__ = (
     'parse_bool_expression', 'parse_term',
     'TermBuilder', 'LiteralTermBuilder',
     'InfixTermBuilder', 'PrefixTermBuilder', 'PostfixTermBuilder',
-    'infixof', 'postfixof', 'prefixof'
+    'infixof', 'postfixof', 'prefixof',
     'ParseException'   # from pyparsing
     )
 

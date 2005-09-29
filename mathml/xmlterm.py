@@ -232,10 +232,10 @@ class BoolExpressionSaxParser(SaxTerm):
 
 class TermSaxParser(SaxTerm):
     def parse(self, term):
-        if hasattr(expression, 'getCharacterStream'): # InputSource?
-            stream = expression.getCharacterStream()
+        if hasattr(term, 'getCharacterStream'): # InputSource?
+            stream = term.getCharacterStream()
             if not stream:
-                expression = expression.getByteStream()
+                term = term.getByteStream()
         if hasattr(term, 'read'): # StringIO?
             term = term.read()
         self.tree_to_sax( parse_term(term) )

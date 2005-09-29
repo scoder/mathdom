@@ -14,7 +14,7 @@ What is MathDOM?
 The package comprises parsers for a subset of Content MathML 2.0 and
 infix terms. It provides access to the term tree through a DOM (based
 on PyXML/4DOM) and allows serialization to Content MathML and literal
-terms in infix or postfix notation.
+terms in infix, prefix and postfix notation.
 
 If you want to test it, run any of the three main files from the "src"
 directory.
@@ -23,14 +23,25 @@ directory.
 The files:
 ----------
 
-mathdom.py    - the DOM implemention
+* Installation:
 
-termparser.py - parser/serializer for literal terms, framework for
-                converters
+setup.py          - distutils, try "python setup.py install"
 
-xmlterm.py    - SAX generator for the termparser AST
 
-setup.py      - distutils, try "python setup.py install"
+* Examples in "examples/":
+
+examples/infix.py - example program: read a term, write out MathML,
+                    infix, prefix, postfix representations
+
+
+* The actual package source in "src/":
+
+src/mathdom.py    - the DOM implemention
+
+src/xmlterm.py    - SAX generator for the termparser AST
+
+src/termparser.py - parser/serializer for literal terms,
+                    framework for converters
 
 
 Have fun!
