@@ -1,15 +1,13 @@
 MathDOM - accessing terms through a MathML DOM in Python
 --------------------------------------------------------
 
-There is not much here yet. If you're interested, send me an email:
-Stefan Behnel <scoder@users.sourceforge.net>
-
 I'd be really glad to hear if this is useful. And maybe you have an
-idea how to make it better. :)
+idea how to make it better. :) Just send me an email:
+Stefan Behnel <scoder@users.sourceforge.net>
 
 See LICENSE file for licensing.
 
-You can find the most up-to-date version at
+You can find the latest version at
 http://mathdom.sourceforge.net
 
 
@@ -22,8 +20,25 @@ through a DOM (based on PyXML/4DOM [2]) and allows serialization to
 Content MathML and literal terms in infix, prefix and postfix
 notation.
 
-If you want to test it, run any of the three main files from the "src"
-directory.
+If you want to test it, run 'examples/infix.py'.
+
+
+Current status:
+---------------
+
+* Short form:
+This is alpha software. This means: it will spit into your coffee and
+morph into a beast right in the second you take your eyes off it. You
+have been warned.
+
+* Long form:
+There are definitely bugs in the implementation and the APIs are not
+stable. You are very welcome to comment on them if you think they are
+a) plain wrong
+b) sort of OK, but could be better
+c) the best you've ever seen
+
+Every comment is appreciated, as are patches.
 
 
 The files:
