@@ -1,7 +1,66 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-Implementation of SAX parser for infix terms.
+Implementation of a SAX parser for the AST defined in the
+mathml.termparser module.
+
+Usage examples:
+(remember to run 'from mathml import mathdom, xmlterm, termparser' first!)
+
+* Building a MathDOM document from a boolean expression in infix notation:
+
+>>> from mathdom import MathDOM
+>>> from xmlterm import BoolExpressionSaxParser
+>>> term = "pi*(1+.3i) + 1"
+>>> bool_term = "%(term)s = 1 or %(term)s > 5 and true" % {'term':term}
+>>> doc = MathDOM.fromMathmlSax(bool_term, BoolExpressionSaxParser())
+>>> doc.toMathml(indent=True)
+<?xml version='1.0' encoding='UTF-8'?>
+<apply xmlns='http://www.w3.org/1998/Math/MathML'>
+  <or/>
+  <apply>
+    <eq/>
+    <apply>
+      <plus/>
+      <apply>
+        <times/>
+        <pi/>
+        <cn type='complex'>1<sep/>0.3</cn>
+      </apply>
+      <cn type='integer'>1</cn>
+    </apply>
+    <cn type='integer'>1</cn>
+  </apply>
+  <apply>
+    <and/>
+    <apply>
+      <gt/>
+      <apply>
+        <plus/>
+        <apply>
+          <times/>
+          <pi/>
+          <cn type='complex'>1<sep/>0.3</cn>
+        </apply>
+        <cn type='integer'>1</cn>
+      </apply>
+      <cn type='integer'>5</cn>
+    </apply>
+    <true/>
+  </apply>
+</apply>
+
+
+* Generating an AST from the DOM and converting it to infix notation:
+
+>>> from xmlterm import dom_to_tree
+>>> from termparser import tree_converters
+>>> ast = dom_to_tree(doc)
+>>> ast
+[u'or', ['=', ['+', ['*', [u'name', 'pi'], [u'const:complex', (Decimal("1"), Decimal("0.3"))]], [u'const:integer', 1]], [u'const:integer', 1]], [u'and', ['>', ['+', ['*', [u'name', 'pi'], [u'const:complex', (Decimal("1"), Decimal("0.3"))]], [u'const:integer', 1]], [u'const:integer', 5]], [u'name', 'true']]]
+>>> converter = tree_converters['infix']
+>>> converter.build(ast)
+u'pi * (1+0.3i) + 1 = 1 or pi * (1+0.3i) + 1 > 5 and true'
 """
 
 __all__ = ('BoolExpressionSaxParser', 'TermSaxParser',
@@ -101,7 +160,7 @@ class SaxTerm(XMLReader):
                 self._write_element(u'ci', name)
         elif operator.startswith(u'const:'):
             if operator == u'const:bool':
-                self._write_element((tree[1] == u'true') and u'true' or u'false')
+                self._write_element(tree[1] and u'true' or u'false')
             elif operator == u'const:complex' or operator == u'const:rational':
                 self._send_bin_constant(operator[6:], tree[1])
             else:
@@ -289,28 +348,16 @@ class TermSaxParser(SaxTerm):
         self.tree_to_sax( parse_term(term) )
 
 
+try:
+    import sys
+    from optimize import bind_all
+    bind_all(sys.modules[__name__])
+    bind_all(pyparsing)
+    del sys, bind_all
+except:
+    pass
+
+
 if __name__ == '__main__':
-    # Test
-    term = ".1*pi+2*3-5.6-6*-1/sin(-45*a.b) * CASE WHEN 3|12 THEN 1+3 ELSE e^(4*1) END + 1"
-    bool_term = "%(term)s = 1 or %(term)s > 5 and true" % {'term':term}
-
-    print "ORIGINAL:"
-    print bool_term
-
-    from mathdom import MathDOM
-    doc = MathDOM.fromMathmlSax(bool_term, BoolExpressionSaxParser())
-    print
-    print "MATHML:"
-    doc.toMathml(indent=True)
-
-    try:
-        from termparser import infixof
-        print
-        print "AST:"
-        print dom_to_tree(doc)
-
-        print
-        print "INFIX:"
-        print infixof( dom_to_tree(doc) )
-    except ImportError:
-        pass
+    import doctest
+    doctest.testmod()

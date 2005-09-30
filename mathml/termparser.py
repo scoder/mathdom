@@ -1,7 +1,43 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-Implementation of an infix term parser. Supports conversion to MathML.
+Implementation of an infix term parser.
+
+Generates an AST that can be converted to SAX events using the
+mathml.xmlterm module.
+
+Usage examples:
+(remember to run 'from mathml import mathdom, xmlterm, termparser' first!)
+
+* arithmetic terms:
+
+>>> from termparser import parse_term, parse_bool_expression, tree_converters
+>>> term = ".1*pi+2*(1+3i)-5.6-6*-1/sin(-45*a.b) + 1"
+>>> parsed = parse_term(term)
+>>> parsed
+('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', (Decimal("1"), Decimal("3")))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', ('-', (u'const:integer', 1)), (u'sin', ('*', ('-', (u'const:integer', 45)), (u'name', u'a.b')))))), (u'const:integer', 1))
+>>> converter = tree_converters['infix']
+>>> converter.build(parsed)
+u'0.1 * pi + 2 * (1+3i) - 5.6 - 6 * ( - 1 ) / sin ( ( - 45 ) * a.b ) + 1'
+
+
+* boolean terms:
+
+>>> bool_term = "%(term)s = 1 or %(term)s > 5 and true" % {'term':term}
+>>> parsed = parse_bool_expression(bool_term)
+>>> parsed
+(u'or', ('=', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', (Decimal("1"), Decimal("3")))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', ('-', (u'const:integer', 1)), (u'sin', ('*', ('-', (u'const:integer', 45)), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 1)), (u'and', ('>', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', (Decimal("1"), Decimal("3")))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', ('-', (u'const:integer', 1)), (u'sin', ('*', ('-', (u'const:integer', 45)), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 5)), (u'const:bool', True)))
+>>> converter = tree_converters['postfix']
+>>> converter.build(parsed)
+u'0.1 pi * 2 (1+3i) * 5.6 6 1 +- 45 +- a.b * sin / * - - 1 + + 1 = 0.1 pi * 2 (1+3i) * 5.6 6 1 +- 45 +- a.b * sin / * - - 1 + + 5 > true and or'
+
+
+* currently broken:
+
+>>> tree_converters["infix"].build( parse_term("-2^2") ) # WORKS
+u'( - 2 ) ^ 2'
+>>> tree_converters["infix"].build( parse_term("-(2+2)^2") ) # BREAKS PARSER
+u'- ( 2 + 2 ) ^ 2'
 """
 
 __all__ = (
@@ -50,15 +86,14 @@ class BaseParser(object):
     def __parse_float(s,p,t):
         return [ (u'const:real',    Decimal(t[0])) ]
     def __parse_bool(s,p,t):
-        return [ (u'const:bool',    unicode(t[0].lower() == 'true').lower()) ]
+        return [ (u'const:bool',    t[0].lower() == 'true') ]
     def __parse_string(s,p,t):
         return [ (u'const:string',  t[0][1:-1]) ]
     def __parse_complex(s,p,t):
-        # t has alread been mangled by __parse_int/float !!
         if len(t) == 1:
-            value = complex(0, int(t[0][1]))
+            value = (0, Decimal(t[0]))
         else:
-            value = complex(float(t[0][1]), float(t[1][1]))
+            value = (Decimal(t[0]), Decimal(t[1]))
         return [ (u'const:complex', value) ]
 
     def __parse_range(s,p,t):
@@ -75,22 +110,24 @@ class BaseParser(object):
     # atoms: int, float, string
     p_sign = oneOf('+ -')
 
-    p_int = Combine( Optional(p_sign) + Word(nums) )
+    _p_int = Combine( Optional(p_sign) + Word(nums) )
+
+    _p_float_woE  = Literal('.') + Word(nums)
+    _p_float_woE |= Word(nums) + Literal('.') + Optional(Word(nums))
+    _p_float = Combine( Optional(p_sign) + _p_float_woE + Optional(Literal('E') + Optional(p_sign) + Word(nums)) )
+
+    p_complex = Optional((_p_float|_p_int) + FollowedBy(oneOf('+ -'))) + (_p_float|_p_int) + Suppress(oneOf('i j'))
+    p_complex.setParseAction(__parse_complex)
+
+    p_int = _p_int + Empty()
     p_int.setName('int')
     p_int.setParseAction(__parse_int)
 
-    _p_float_woE  = Literal('.') + Word(nums)
-    _p_float_woE |= Optional(p_sign) + Word(nums) + Literal('.') + Optional(Word(nums))
-    p_float = Combine( _p_float_woE + Optional(Literal('E') + Optional(p_sign) + Word(nums)) )
+    p_float = _p_float + Empty()
     p_float.setName('float')
     p_float.setParseAction(__parse_float)
 
-    p_complex_int   = Optional(p_int   + FollowedBy(oneOf('+ -'))) + p_int   + Suppress('i')
-    p_complex_float = Optional(p_float + FollowedBy(oneOf('+ -'))) + p_float + Suppress('i')
-    p_complex_int.setParseAction(__parse_complex)
-    p_complex_float.setParseAction(__parse_complex)
-
-    p_num = p_complex_int | p_complex_float | p_float | p_int
+    p_num = p_complex | p_float | p_int
     #p_num.setName('number')
 
     p_bool = CaselessLiteral(u'true') | CaselessLiteral(u'false')
@@ -256,9 +293,9 @@ def parse_term(term):
 
 class TermBuilder(object):
     "Abstract superclass for term builders."
-    OPERATOR_ORDER = [ op for ops in (ArithmeticParser.operator_order, '| in',
-                                      BoolExpressionParser.cmp_operators, 'and xor or')
-                       for op in ops.split() ]
+    OPERATOR_ORDER = list(op for ops in (ArithmeticParser.operator_order, '| in',
+                                         BoolExpressionParser.cmp_operators, 'and xor or')
+                          for op in ops.split() )
     OPERATOR_SET = frozenset(OPERATOR_ORDER)
 
     def __init__(self):
@@ -326,7 +363,14 @@ class LiteralTermBuilder(TermBuilder):
         return [ unicode(str(operands[0]), 'ascii') ]
 
     def _handle_const(self, operator, operands, affin):
-        return [ unicode(str(operands[0]), 'ascii') ]
+        value = operands[0]
+        if operator == 'const:complex':
+            sval = u'(%s%s%si)' % (value[0], (value[1] >= 0) and '+' or '', value[1])
+        elif operator == 'const:boolean':
+            sval = value and 'true' or 'false'
+        else:
+            sval = unicode(str(value).lower(), 'ascii')
+        return [ sval ]
 
     def _handle_range(self, operator, operands, affin):
         assert operator == 'range'
@@ -344,18 +388,24 @@ class InfixTermBuilder(LiteralTermBuilder):
     def _init_build_status(self):
         return (self.MAX_AFFIN, self.MAX_AFFIN)
 
-    def _build_children(self, operator, children, parent_affin):
+    def _find_affin(self, operator, affin_status):
         try:
             affin = self.__operator_order(operator)
         except ValueError:
             if operator == 'case':
                 affin = self.MAX_AFFIN
             else:
-                affin = parent_affin
-        my_affin = (affin, parent_affin[0])
-        return super(InfixTermBuilder, self)._build_children(operator, children, my_affin)
+                affin = affin_status
+        return (affin, affin_status[0])
 
-    def _handle_case(self, operator, operands, affin):
+    def _build_children(self, operator, children, affin_status):
+        if operator == '-' and len(children) == 1:
+            affin = (0, affin_status[0])
+        else:
+            affin = self._find_affin(operator, affin_status)
+        return super(InfixTermBuilder, self)._build_children(operator, children, affin)
+
+    def _handle_case(self, operator, operands, affin_status):
         assert operator == 'case'
         result = [ 'CASE', 'WHEN', operands[0], 'THEN', operands[1] ]
         if len(operands) > 2:
@@ -364,15 +414,21 @@ class InfixTermBuilder(LiteralTermBuilder):
         result.append('END')
         return result
 
-    def _handleOP(self, operator, operands, affin):
-        my_affin, parent_affin = affin
-        if my_affin > parent_affin:
-            return chain(chain(*zip(chain('(', repeat(operator)), operands)), ')')
+    def _handleOP(self, operator, operands, affin_status):
+        my_affin, parent_affin = self._find_affin(operator, affin_status)
+        if my_affin >= parent_affin:
+            if len(operands) == 1:
+                return ['(', operator, operands[0], ')'] # safe bet
+            else:
+                return chain(chain(*zip(chain('(', repeat(operator)), operands)), ')')
         else:
-            return chain((operands[0],), chain(*zip(chain(repeat(operator)),
-                                                    islice(operands,1,None))))
+            if len(operands) == 1:
+                return [operator, operands[0]]
+            else:
+                return chain((operands[0],), chain(*zip(chain(repeat(operator)),
+                                                        islice(operands,1,None))))
 
-    def _handle(self, operator, operands, affin):
+    def _handle(self, operator, operands, affin_status):
         return [ operator, '(', ','.join(operands), ')' ]
 
 class PostfixTermBuilder(LiteralTermBuilder):
@@ -451,30 +507,11 @@ try:
     from optimize import bind_all
     bind_all(sys.modules[__name__])
     bind_all(pyparsing)
+    del sys, bind_all
 except:
     pass
 
 
 if __name__ == '__main__':
-    # Test
-    term = ".1*pi+2*(1+3i)-5.6-6*-1/sin(-45*a.b) * CASE WHEN 3|12 THEN 1+3 ELSE e^(4*1) END + 1"
-    print term
-    print
-    print parse_term(term)
-    print
-
-    bool_term = "%(term)s = 1 or %(term)s > 5 and true" % {'term':term}
-    print bool_term
-    print
-
-    parsed = parse_bool_expression(bool_term)
-    print "PARSED :",  parsed
-    print
-
-    for output_type in ('infix', 'prefix', 'postfix', 'should-fail'):
-        try:
-            converter = tree_converters[output_type]
-            print "%s:" % output_type.upper().ljust(8),  converter.build(parsed)
-            print
-        except KeyError:
-            print "unknown output type: '%s'" % output_type
+    import doctest
+    doctest.testmod()

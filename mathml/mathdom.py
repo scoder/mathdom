@@ -164,15 +164,18 @@ class MathValue(Element):
 
     @method_elements(u"cn")
     def value(self):
+        """Returns the numerical value with the correct type.
+
+        Note that complex numbers are returned as 'tuple(Decimal, Decimal)'
+        instead of 'complex(float, float)' to avoid float conversion errors.
+        """
         valuetype = self.valuetype()
         if valuetype == u'integer':
             return int(self.firstChild.data)
         elif valuetype == u'real':
             return Decimal(self.firstChild.data)
-        elif valuetype in (u'rational', u'e-notation'):
+        elif valuetype in (u'rational', u'e-notation', u'complex'):
             return (Decimal(self.childNodes[0].data), Decimal(self.childNodes[2].data))
-        elif valuetype == u'complex':
-            return complex(float(self.childNodes[0].data), float(self.childNodes[2].data))
         elif valuetype == u'constant':
             value = self.firstChild.data.strip()
             return value.replace(u'&', '').replace(u';', '')
@@ -348,7 +351,9 @@ class MathDOM(object):
     def __repr__(self):
         return repr(self.__document)
 
-    def toMathml(self, out=sys.stdout, indent=False):
+    def toMathml(self, out=None, indent=False):
+        if out is None:
+            out = sys.stdout
         if indent:
             PrettyPrint(self.__document, out)
         else:
