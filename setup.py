@@ -18,7 +18,7 @@ that make using the DOM a little easier.
 You can call it the shortest way between different term
 representations and a Content MathML DOM. Ever noticed the
 annoying differences between terms in different programming
-languages? Build your application around the DOM and stop careing
+languages? Build your application around the DOM and stop caring
 about the term representation that users prefer or that your
 machine can execute. If you need a different representation, add a
 converter, but don't change the model. Literal terms are connected
