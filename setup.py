@@ -1,7 +1,7 @@
 from distutils.core import setup
 setup(
     name='mathdom',
-    version='0.2.3',
+    version='0.2.4',
     package_dir={'mathml': 'src'},
     packages=['mathml'],
 
