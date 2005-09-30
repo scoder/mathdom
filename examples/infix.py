@@ -1,4 +1,6 @@
 import sys
+from itertools import imap
+
 sys.path.append('src')
 sys.path.append('../src')
 
@@ -30,16 +32,23 @@ try:
     try:
         doc = MathDOM.fromMathmlSax(term, TermSaxParser())
     except ParseException, e:
-        print "Parsing as term failed:", e
+        print "Parsing as term failed, trying boolean expression ..."
+        print
+
         doc = MathDOM.fromMathmlSax(term, BoolExpressionSaxParser())
 except ParseException, e:
-    print "Parsing as boolean expression failed:", e
+    print "Parsing as boolean expression failed:", unicode(e).encode('UTF-8')
     print "The term is not parsable, neither as arithmetic term not as boolean expression."
     sys.exit(0)
 
 
 print "MATHML:"
-doc.toMathml(indent=True)
+doc.toMathml(indent=False)
+print "\n"
+
+root = doc.documentElement
+print "CONSTANTS USED :", ', '.join(frozenset(imap(str, root.iterconstants())))
+print "NAMES USED     :", ', '.join(frozenset(imap(str, root.iteridentifiers())))
 print
 
 print "AST:"

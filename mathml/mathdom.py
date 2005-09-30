@@ -11,6 +11,11 @@ from xml.dom import Node, getDOMImplementation
 from xml.dom.Element import Element
 from xml.dom.ext import Print, PrettyPrint
 
+try:
+    from decimal import Decimal
+except ImportError:
+    Decimal = float # Oh, well ...
+
 
 UNARY_ARITHMETIC_FUNCTIONS = u"""
 factorial minus abs conjugate arg real imaginary floor ceiling
@@ -108,15 +113,14 @@ class MathElement(Element):
 
     @register_method
     def iteridentifiers(self):
-        return (e.firstChild.data
-                for e in self.getElementsByTagName(u'ci')
-                if hasattr(e, 'firstChild') and hasattr(e.firstChild, 'data'))
+        return (e.name() for e in self.getElementsByTagName(u'ci'))
 
     @register_method
     def iterconstants(self):
-        return (e.firstChild.data
-                for e in chain(self.getElementsByTagName(u'cn'), self.getElementsByTagName(u'name'))
-                if hasattr(e, 'firstChild') and hasattr(e.firstChild, 'data'))
+        return chain(
+            (e.name()  for e in self.getElementsByTagName(u'name')),
+            (e.value() for e in self.getElementsByTagName(u'cn'))
+            )
 
     @method_elements(u"apply")
     def operator(self):
@@ -149,18 +153,61 @@ class MathValue(Element):
     def value(self):
         return self.firstChild
 
+    @method_elements(u"ci")
+    def name(self):
+        if hasattr(self.firstChild, 'data'):
+            return self.firstChild.data
+        elif hasattr(self.firstChild, 'localName'):
+            return self.firstChild.localName
+        else:
+            return str(self.firstChild)
+
     @method_elements(u"cn")
     def value(self):
         valuetype = self.valuetype()
         if valuetype == u'integer':
             return int(self.firstChild.data)
         elif valuetype == u'real':
-            return float(self.firstChild.data)
+            return Decimal(self.firstChild.data)
         elif valuetype in (u'rational', u'e-notation'):
-            return (self.childNodes[0].data, self.childNodes[2].data)
+            return (Decimal(self.childNodes[0].data), Decimal(self.childNodes[2].data))
+        elif valuetype == u'complex':
+            return complex(float(self.childNodes[0].data), float(self.childNodes[2].data))
         elif valuetype == u'constant':
             value = self.firstChild.data.strip()
             return value.replace(u'&', '').replace(u';', '')
+
+    @method_elements(u"cn")
+    def set_complex(self, value):
+        real, imag = unicode(value.real), unicode(value.imag)
+        self.setAttribute(u'type', u'complex')
+        del self.childNodes[:]
+        doc = self.ownerDocument
+        self.appendChild( doc.createTextNode(real) )
+        self.appendChild( doc.createElementNS(MATHML_NAMESPACE_URI, u'sep') )
+        self.appendChild( doc.createTextNode(imag) )
+
+    @method_elements(u"cn")
+    def set_rational(self, *value):
+        acount = len(value)
+        if acount and isinstance(value[0], tuple):
+            value = value[0]
+            acount  = len(value)
+
+        if acount == 2:
+            tvalue = (unicode(value[0]), unicode(value[1]))
+        elif acount == 1:
+            tvalue = (unicode(value[0]), u'1')
+        elif acount == 0:
+            tvalue = (u'0', u'0')
+        else:
+            raise TypeError, "set_rational() takes at most 2 arguments (%d given)" % len(acount)
+
+        del self.childNodes[:]
+        doc = self.ownerDocument
+        self.appendChild( doc.createTextNode(tvalue[0]) )
+        self.appendChild( doc.createElementNS(MATHML_NAMESPACE_URI, u'sep') )
+        self.appendChild( doc.createTextNode(tvalue[1]) )
 
     @method_elements(u"cn")
     def valuetype(self):
@@ -175,8 +222,8 @@ class MathValue(Element):
                     return name
                 except ValueError:
                     pass
-            
-        return self.firstChild
+        else:
+            return u'real' # MathML default!
 
     @method_elements(u"cn")
     def __repr__(self):

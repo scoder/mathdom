@@ -19,6 +19,11 @@ from xml.sax.handler import feature_namespaces
 from mathdom import MATHML_NAMESPACE_URI
 from termparser import parse_bool_expression, parse_term, tree_converters
 
+try:
+    from decimal import Decimal
+except ImportError:
+    Decimal = float # Oh, well ...
+
 def mkstr(value):
     if isinstance(value, (str, unicode)):
         return value
@@ -97,6 +102,8 @@ class SaxTerm(XMLReader):
         elif operator.startswith(u'const:'):
             if operator == u'const:bool':
                 self._write_element((tree[1] == u'true') and u'true' or u'false')
+            elif operator == u'const:complex' or operator == u'const:rational':
+                self._send_bin_constant(operator[6:], tree[1])
             else:
                 self._write_element(u'cn', mkstr(tree[1]),
                                     self._attribute(u'type', operator[6:]))
@@ -104,6 +111,25 @@ class SaxTerm(XMLReader):
             self._send_case(tree)
         else:
             self._send_function(operator, tree)
+
+    def _send_bin_constant(self, typename, value):
+        if isinstance(value, complex):
+            parts = (value.real, value.imag)
+        elif isinstance(value, tuple):
+            parts = (value[0], value[1])
+        else:
+            raise NotImplementedError, "Only complex numbers or tuples can be constant pairs."
+
+        cn_name = u'cn'
+        cn_tag  = (MATHML_NAMESPACE_URI, cn_name)
+        parts = map(mkstr, parts)
+
+        parser  = self.parser
+        parser.startElementNS(cn_tag, cn_name, self._attribute(u'type', typename))
+        parser.characters(parts[0])
+        self._write_element(u'sep')
+        parser.characters(parts[1])
+        parser.endElementNS(cn_tag, cn_name)
 
     def _send_case(self, tree):
         parser = self.parser
@@ -212,12 +238,7 @@ def dom_to_tree(doc):
         elif mtype == u'ci':
             return [ u'name', element.firstChild.data ]
         elif mtype == u'cn':
-            value = element.firstChild.data
-            value_type = element.getAttribute('type')
-            if value_type:
-                return [ u'const:%s' % value_type, value ]
-            else:
-                return value
+            return [ u'const:%s' % element.valuetype(), element.value() ]
         elif mtype == u'apply':
             operator = element.firstChild
             if operator.childNodes:
