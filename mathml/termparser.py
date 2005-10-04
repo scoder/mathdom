@@ -53,13 +53,11 @@ try:
 except ImportError:
     pass
 
-try:
-    from decimal import Decimal
-except ImportError:
-    Decimal = float # Oh, well ...
-
 from itertools import *
 from pyparsing import *
+
+
+from datatypes import Decimal, Complex, Rational, ENotation
 
 
 def _build_expression_tree(match, pos, tokens):
@@ -89,11 +87,13 @@ class BaseParser(object):
         return [ (u'const:bool',    t[0].lower() == 'true') ]
     def __parse_string(s,p,t):
         return [ (u'const:string',  t[0][1:-1]) ]
+    def __parse_enotation(s,p,t):
+        return [ (u'const:enotation', ENotation(t[0], t[1])) ]
     def __parse_complex(s,p,t):
         if len(t) == 1:
-            value = (0, Decimal(t[0]))
+            value = Complex(0, Decimal(t[0]))
         else:
-            value = (Decimal(t[0]), Decimal(t[1]))
+            value = Complex(Decimal(t[0]), Decimal(t[1]))
         return [ (u'const:complex', value) ]
 
     def __parse_range(s,p,t):
@@ -114,7 +114,11 @@ class BaseParser(object):
 
     _p_float_woE  = Literal('.') + Word(nums)
     _p_float_woE |= Word(nums) + Literal('.') + Optional(Word(nums))
-    _p_float = Combine( Optional(p_sign) + _p_float_woE + Optional(Literal('E') + Optional(p_sign) + Word(nums)) )
+    _p_float = Combine( Optional(p_sign) + _p_float_woE )
+
+    p_enotation = (Combine(Optional(p_sign) + _p_float_woE) | _p_int) + Suppress(Literal('E')) + _p_int
+    p_enotation.setName('e-notation')
+    p_enotation.setParseAction(__parse_enotation)
 
     p_complex = Optional((_p_float|_p_int) + FollowedBy(oneOf('+ -'))) + (_p_float|_p_int) + Suppress(oneOf('i j'))
     p_complex.setParseAction(__parse_complex)
@@ -127,7 +131,8 @@ class BaseParser(object):
     p_float.setName('float')
     p_float.setParseAction(__parse_float)
 
-    p_num = p_complex | p_float | p_int
+
+    p_num = p_complex | p_enotation | p_float | p_int
     #p_num.setName('number')
 
     p_bool = CaselessLiteral(u'true') | CaselessLiteral(u'false')
@@ -185,14 +190,16 @@ class ArithmeticParser(object):
     # build grammar tree for binary operators in order of precedence
     for __operator in operator_order.split():
         _p_op = Literal(__operator)
-        _p_exp = _p_exp + ZeroOrMore( _p_op + _p_exp ) # ZeroOrMore->Optional could speed this up
+        # ZeroOrMore->Optional could speed this up
+        if __operator == '-':
+            _neg_exp = _p_op + _p_exp
+            _neg_exp.setParseAction(_build_expression_tree)
+            _p_exp = (_p_exp ^ _neg_exp) + ZeroOrMore( _p_op + _p_exp )
+        else:
+            _p_exp = _p_exp + ZeroOrMore( _p_op + _p_exp )
         _p_exp.setParseAction(_build_expression_tree)
 
     p_arithmetic_exp = _p_exp
-
-    _p_neg = Literal('-')
-    _p_neg_exp = _p_neg + _p_num_atom
-    _p_neg_exp.setParseAction(_build_expression_tree)
 
     # function = identifier(exp,...)
     p_function = BaseParser.p_identifier + Suppress('(') + delimitedList(p_arithmetic_exp) + Suppress(')')
@@ -210,7 +217,7 @@ class ArithmeticParser(object):
     p_case.setParseAction(__parse_case)
 
     # numeric values = attribute | number | expression
-    _p_num_atom <<= _p_neg_exp | p_case | ( Suppress('(') + p_arithmetic_exp + Suppress(')') ) | BaseParser.p_num | p_function | BaseParser.p_attribute
+    _p_num_atom <<= p_case | ( Suppress('(') + p_arithmetic_exp + Suppress(')') ) | BaseParser.p_num | p_function | BaseParser.p_attribute
 
     _p_arithmethic_range  = Literal(':') + p_arithmetic_exp
     _p_arithmethic_range += Optional(Literal(':') + p_arithmetic_exp)
@@ -362,15 +369,22 @@ class LiteralTermBuilder(TermBuilder):
     def _handle_name(self, operator, operands, affin):
         return [ unicode(str(operands[0]), 'ascii') ]
 
-    def _handle_const(self, operator, operands, affin):
+    def _handle_const_boolean(self, operator, operands, affin):
+        return [ operands[0] and 'true' or 'false' ]
+
+    def _handle_const_complex(self, operator, operands, affin):
         value = operands[0]
-        if operator == 'const:complex':
-            sval = u'(%s%s%si)' % (value[0], (value[1] >= 0) and '+' or '', value[1])
-        elif operator == 'const:boolean':
-            sval = value and 'true' or 'false'
-        else:
-            sval = unicode(str(value).lower(), 'ascii')
-        return [ sval ]
+        return [ u'(%s%s%si)' % (value.real_str, (value.imag >= 0) and '+' or '', value.imag_str) ]
+
+    def _handle_const_rational(self, operator, operands, affin):
+        value = operands[0]
+        return [ u'(%s/%s)' % (value.num_str, value.denom_str) ]
+
+    def _handle_const_enotation(self, operator, operands, affin):
+        return [ unicode(operands[0]) ]
+
+    def _handle_const(self, operator, operands, affin):
+        return [ unicode(str(operands[0]).lower(), 'ascii') ]
 
     def _handle_range(self, operator, operands, affin):
         assert operator == 'range'
@@ -465,13 +479,15 @@ class PrefixTermBuilder(LiteralTermBuilder):
 
 
 class OutputConversion(object):
-    "Object of this class are used to reference the different converters."
+    "Objects of this class are used to reference the different converters."
     __CONVERTERS = {}
     def __init__(self):
         pass
 
     def register_converter(self, output_type, converter):
         "Register a converter for an output type."
+        if not hasattr(converter, 'build'):
+            raise TypeError, "Converters must provide a 'build' method."
         self.__CONVERTERS[output_type] = converter
 
     def unregister_converter(self, output_type):

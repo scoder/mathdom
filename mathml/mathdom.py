@@ -11,10 +11,17 @@ from xml.dom import Node, getDOMImplementation
 from xml.dom.Element import Element
 from xml.dom.ext import Print, PrettyPrint
 
-try:
-    from decimal import Decimal
-except ImportError:
-    Decimal = float # Oh, well ...
+from decimal import Decimal
+
+
+from datatypes import Decimal, Complex, Rational, ENotation
+
+TYPE_MAP = {
+    'real'       : Decimal,
+    'complex'    : Complex,
+    'rational'   : Rational,
+    'e-notation' : ENotation
+    }
 
 
 UNARY_ARITHMETIC_FUNCTIONS = u"""
@@ -113,14 +120,27 @@ class MathElement(Element):
 
     @register_method
     def iteridentifiers(self):
+        return iter(self.getElementsByTagName(u'ci'))
+
+    @register_method
+    def iteridentifiernames(self):
         return (e.name() for e in self.getElementsByTagName(u'ci'))
 
     @register_method
     def iterconstants(self):
-        return chain(
-            (e.name()  for e in self.getElementsByTagName(u'name')),
-            (e.value() for e in self.getElementsByTagName(u'cn'))
-            )
+        return iter(self.getElementsByTagName(u'name'))
+
+    @register_method
+    def iterconstantnames(self):
+        return (e.firstChild.data for e in self.getElementsByTagName(u'name'))
+
+    @register_method
+    def iternumbers(self):
+        return iter(self.getElementsByTagName(u'cn'))
+
+    @register_method
+    def iternumbervalues(self):
+        return iter(n.value() for n in self.getElementsByTagName(u'cn'))
 
     @method_elements(u"apply")
     def operator(self):
@@ -129,6 +149,10 @@ class MathElement(Element):
     @method_elements(u"apply")
     def operands(self):
         return self.childNodes[1:]
+
+    @method_elements(u"apply")
+    def operand_count(self):
+        return len(self.childNodes) - 1
 
     @method_elements(u"apply")
     def append_operand(self, operand):
@@ -153,7 +177,7 @@ class MathValue(Element):
     def value(self):
         return self.firstChild
 
-    @method_elements(u"ci")
+    @method_elements(u"ci name")
     def name(self):
         if hasattr(self.firstChild, 'data'):
             return self.firstChild.data
@@ -164,53 +188,51 @@ class MathValue(Element):
 
     @method_elements(u"cn")
     def value(self):
-        """Returns the numerical value with the correct type.
-
-        Note that complex numbers are returned as 'tuple(Decimal, Decimal)'
-        instead of 'complex(float, float)' to avoid float conversion errors.
-        """
+        "Returns the numerical value with the correct type."
         valuetype = self.valuetype()
         if valuetype == u'integer':
             return int(self.firstChild.data)
         elif valuetype == u'real':
             return Decimal(self.firstChild.data)
-        elif valuetype in (u'rational', u'e-notation', u'complex'):
-            return (Decimal(self.childNodes[0].data), Decimal(self.childNodes[2].data))
-        elif valuetype == u'constant':
-            value = self.firstChild.data.strip()
-            return value.replace(u'&', '').replace(u';', '')
+
+        try:
+            typeclass = TYPE_MAP[valuetype]
+            return typeclass(self.childNodes[0].data, self.childNodes[2].data)
+        except KeyError:
+            raise NotImplementedError, "Invalid data type."
+
+    @method_elements(u"cn")
+    def _set_tuple_value(self, typename, value_tuple):
+        del self.childNodes[:]
+        doc = self.ownerDocument
+        appendChild = self.appendChild
+
+        appendChild( doc.createTextNode(value_tuple[0]) )
+        appendChild( doc.createElementNS(MATHML_NAMESPACE_URI, u'sep') )
+        appendChild( doc.createTextNode(value_tuple[1]) )
+        self.setAttributeNS(MATHML_NAMESPACE_URI, u'type', typename)
+
+    @method_elements(u"cn")
+    def set_value(self, value):
+        if isinstance(value, (complex, Complex)):
+            self.set_complex(value)
+        elif isinstance(value, Rational):
+            self.set_rational(value)
+        else:
+            raise NotImplementedError, "Invalid data type."
 
     @method_elements(u"cn")
     def set_complex(self, value):
-        real, imag = unicode(value.real), unicode(value.imag)
-        self.setAttribute(u'type', u'complex')
-        del self.childNodes[:]
-        doc = self.ownerDocument
-        self.appendChild( doc.createTextNode(real) )
-        self.appendChild( doc.createElementNS(MATHML_NAMESPACE_URI, u'sep') )
-        self.appendChild( doc.createTextNode(imag) )
+        try:
+            tuple_value = (value.real_str, value.imag_str)
+        except AttributeError:
+            tuple_value = (unicode(value.real), unicode(value.imag))
+        self._set_tuple_value(u'complex', tuple_value)
 
     @method_elements(u"cn")
     def set_rational(self, *value):
-        acount = len(value)
-        if acount and isinstance(value[0], tuple):
-            value = value[0]
-            acount  = len(value)
-
-        if acount == 2:
-            tvalue = (unicode(value[0]), unicode(value[1]))
-        elif acount == 1:
-            tvalue = (unicode(value[0]), u'1')
-        elif acount == 0:
-            tvalue = (u'0', u'0')
-        else:
-            raise TypeError, "set_rational() takes at most 2 arguments (%d given)" % len(acount)
-
-        del self.childNodes[:]
-        doc = self.ownerDocument
-        self.appendChild( doc.createTextNode(tvalue[0]) )
-        self.appendChild( doc.createElementNS(MATHML_NAMESPACE_URI, u'sep') )
-        self.appendChild( doc.createTextNode(tvalue[1]) )
+        value = Rational(*value)
+        self._set_tuple_value(u'rational', (value.num_str, value.denom_str))
 
     @method_elements(u"cn")
     def valuetype(self):
@@ -239,8 +261,6 @@ class MathValue(Element):
         return u"<%s>%r</%s>" % (name, self.firstChild, name)
 
 
-#RE_ENTITY_REFERENCE = re.compile(r'^\s*&([a-z0-9]+);\s*$', re.I|re.U)
-#MATCH_ENTITY = RE_ENTITY_REFERENCE.match
 def augmentElements(node):
     "Weave methods into DOM Element objects."
     if node.nodeType == node.ELEMENT_NODE:
@@ -255,12 +275,6 @@ def augmentElements(node):
             if not child.data.strip():
                 node.removeChild(child)
                 continue
-##             else:
-##                 entity_match = MATCH_ENTITY(child.data)
-##                 if entity_match:
-##                     print child.data
-##                     entity_ref = node.ownerDocument.createEntityReference(entity_match.group(1))
-##                     node.replaceChild(entity_ref, child)
         else:
             augmentElements(child)
 
@@ -358,3 +372,4 @@ class MathDOM(object):
             PrettyPrint(self.__document, out)
         else:
             Print(self.__document, out)
+

@@ -161,8 +161,10 @@ class SaxTerm(XMLReader):
         elif operator.startswith(u'const:'):
             if operator == u'const:bool':
                 self._write_element(tree[1] and u'true' or u'false')
-            elif operator == u'const:complex' or operator == u'const:rational':
+            elif operator in (u'const:complex', u'const:rational'):
                 self._send_bin_constant(operator[6:], tree[1])
+            elif operator == u'const:enotation':
+                self._send_bin_constant('e-notation', tree[1])
             else:
                 self._write_element(u'cn', mkstr(tree[1]),
                                     self._attribute(u'type', operator[6:]))
@@ -172,12 +174,10 @@ class SaxTerm(XMLReader):
             self._send_function(operator, tree)
 
     def _send_bin_constant(self, typename, value):
-        if isinstance(value, complex):
-            parts = (value.real, value.imag)
-        elif isinstance(value, tuple):
-            parts = (value[0], value[1])
-        else:
-            raise NotImplementedError, "Only complex numbers or tuples can be constant pairs."
+        try:
+            parts = tuple(value)
+        except:
+            raise NotImplementedError, "Only MathDOM types are constant pairs."
 
         cn_name = u'cn'
         cn_tag  = (MATHML_NAMESPACE_URI, cn_name)
@@ -297,7 +297,7 @@ def dom_to_tree(doc):
         elif mtype == u'ci':
             return [ u'name', element.firstChild.data ]
         elif mtype == u'cn':
-            return [ u'const:%s' % element.valuetype(), element.value() ]
+            return [ u'const:%s' % element.valuetype().replace('-', ''), element.value() ]
         elif mtype == u'apply':
             operator = element.firstChild
             if operator.childNodes:

@@ -1,14 +1,15 @@
 import sys
 from itertools import imap
 
-sys.path.append('src')
-sys.path.append('../src')
-
 try:
     from mathml.termparser import *
     from mathml.mathdom    import *
+    from mathml.xmlterm    import *
 except ImportError:
     # Maybe we are still before installation?
+    sys.path.append('src')
+    sys.path.append('../src')
+
     from mathdom    import MathDOM
     from termparser import *
     from xmlterm    import *
@@ -20,7 +21,7 @@ except EOFError:
     sys.exit(0)
 
 if not term:
-    term = ".1*pi+2*(1+3i)-5.6-6*-1/sin(-45*a.b) * CASE WHEN 3|12 THEN 1+3 ELSE e^(4*1) END + 1"
+    term = ".1*pi+2E-4*(1+3i)-5.6-6*-1/sin(-45.5E6*a.b) * CASE WHEN 3|12 THEN 1+3 ELSE e^(4*1) END + 1"
     term = "%(term)s = 1 or %(term)s > 5 and true" % {'term':term}
 
 
@@ -47,8 +48,8 @@ doc.toMathml(indent=False)
 print "\n"
 
 root = doc.documentElement
-print "CONSTANTS USED :", ', '.join(frozenset(imap(str, root.iterconstants())))
-print "NAMES USED     :", ', '.join(frozenset(imap(str, root.iteridentifiers())))
+print "NUMBERS USED :", ', '.join(frozenset(imap(str, root.iternumbervalues())))
+print "NAMES USED   :", ', '.join(frozenset(e.name() for e in root.iteridentifiers()))
 print
 
 print "AST:"
