@@ -11,8 +11,8 @@ Usage examples:
 
 >>> from mathdom import MathDOM
 >>> from xmlterm import BoolExpressionSaxParser
->>> term = "pi*(1+.3i) + 1"
->>> bool_term = "%(term)s = 1 or %(term)s > 5 and true" % {'term':term}
+>>> term = 'pi*(1+.3i) + 1'
+>>> bool_term = '%(term)s = 1 or %(term)s > 5 and true' % {'term':term}
 >>> doc = MathDOM.fromMathmlSax(bool_term, BoolExpressionSaxParser())
 >>> doc.toMathml(indent=True)
 <?xml version='1.0' encoding='UTF-8'?>
@@ -54,17 +54,17 @@ Usage examples:
 * Generating an AST from the DOM and converting it to infix notation:
 
 >>> from xmlterm import dom_to_tree
->>> from termparser import tree_converters
+>>> from termbuilder import tree_converters
 >>> ast = dom_to_tree(doc)
 >>> ast
-[u'or', ['=', ['+', ['*', [u'name', 'pi'], [u'const:complex', (Decimal("1"), Decimal("0.3"))]], [u'const:integer', 1]], [u'const:integer', 1]], [u'and', ['>', ['+', ['*', [u'name', 'pi'], [u'const:complex', (Decimal("1"), Decimal("0.3"))]], [u'const:integer', 1]], [u'const:integer', 5]], [u'name', 'true']]]
+[u'or', ['=', ['+', ['*', [u'name', 'pi'], [u'const:complex', Complex(1+0.3j)]], [u'const:integer', 1]], [u'const:integer', 1]], [u'and', ['>', ['+', ['*', [u'name', 'pi'], [u'const:complex', Complex(1+0.3j)]], [u'const:integer', 1]], [u'const:integer', 5]], [u'name', 'true']]]
 >>> converter = tree_converters['infix']
 >>> converter.build(ast)
 u'pi * (1+0.3i) + 1 = 1 or pi * (1+0.3i) + 1 > 5 and true'
 """
 
 __all__ = ('BoolExpressionSaxParser', 'TermSaxParser',
-           'dom_to_tree', 'serialize_dom', 'tree_converters')
+           'dom_to_tree', 'serialize_dom')
 
 try:
     from psyco.classes import *
@@ -76,7 +76,9 @@ from xml.sax.xmlreader import XMLReader, AttributesNSImpl
 from xml.sax.handler import feature_namespaces
 
 from mathdom import MATHML_NAMESPACE_URI
-from termparser import parse_bool_expression, parse_term, tree_converters
+from termparser import parse_bool_expression, parse_term
+from termbuilder import tree_converters
+
 
 try:
     from decimal import Decimal
@@ -91,11 +93,11 @@ def mkstr(value):
 
 
 _ELEMENT_CONSTANT_MAP = {
-    'true'  : 'true',
-    'false' : 'false',
-    'pi'    : 'pi',
-    'i'     : 'imaginaryi',
-    'e'     : 'exponentiale'
+    u'true'  : u'true',
+    u'false' : u'false',
+    u'pi'    : u'pi',
+    u'i'     : u'imaginaryi',
+    u'e'     : u'exponentiale'
     }
 
 _FUNCTION_MAP = {
@@ -142,9 +144,15 @@ class SaxTerm(XMLReader):
         parser.endPrefixMapping(None)
         parser.endDocument()
 
-    def _attribute(self, name, value):
-        attr = (None, name)
-        return AttributesNSImpl( {attr : value}, {attr : name} )
+    def _attributes(self, **attributes):
+        values, qnames = {}, {}
+        for name, value in attributes.iteritems():
+            name = unicode(name)
+            ns_name = (None, name)
+            qnames[ns_name] = name
+            values[ns_name] = value
+
+        return AttributesNSImpl(values, qnames)
 
     def _recursive_tree_to_sax(self, tree):
         operator = tree[0]
@@ -167,9 +175,14 @@ class SaxTerm(XMLReader):
                 self._send_bin_constant('e-notation', tree[1])
             else:
                 self._write_element(u'cn', mkstr(tree[1]),
-                                    self._attribute(u'type', operator[6:]))
-        elif operator == 'case':
+                                    self._attributes(type=operator[6:]))
+        elif operator == u'case':
             self._send_case(tree)
+        elif operator[:4] == u'list':
+            self._send_list(tree, u'list', self.NO_ATTR)
+        elif operator[:9] == u'interval:':
+            closure = self._attributes(closure=operator[9:] or 'closed')
+            self._send_list(tree, u'interval', closure)
         else:
             self._send_function(operator, tree)
 
@@ -179,53 +192,58 @@ class SaxTerm(XMLReader):
         except:
             raise NotImplementedError, "Only MathDOM types are constant pairs."
 
-        cn_name = u'cn'
-        cn_tag  = (MATHML_NAMESPACE_URI, cn_name)
         parts = map(mkstr, parts)
 
         parser  = self.parser
-        parser.startElementNS(cn_tag, cn_name, self._attribute(u'type', typename))
+        self._open_tag(u'cn', self._attributes(type=typename))
         parser.characters(parts[0])
         self._write_element(u'sep')
         parser.characters(parts[1])
-        parser.endElementNS(cn_tag, cn_name)
+        self._close_tag(u'cn')
 
     def _send_case(self, tree):
-        parser = self.parser
-        el_open  = parser.startElementNS
-        el_close = parser.endElementNS
+        el_open  = self._open_tag
+        el_close = self._close_tag
         tree_to_sax = self._recursive_tree_to_sax
 
-        piecewise_tag = (MATHML_NAMESPACE_URI, u'piecewise')
+        el_open(u'piecewise', self.NO_ATTR)
 
-        el_open(piecewise_tag, u'piecewise', self.NO_ATTR)
-
-        piece_tag = (MATHML_NAMESPACE_URI, u'piece')
-        el_open(piece_tag, u'piece', self.NO_ATTR)
+        el_open(u'piece', self.NO_ATTR)
         tree_to_sax(tree[2])
         tree_to_sax(tree[1])
-        el_close(piece_tag, u'piece')
+        self._close_tag(u'piece')
 
         if len(tree) > 3:
-            otherwise_tag = (MATHML_NAMESPACE_URI, u'otherwise')
-            el_open(otherwise_tag, u'otherwise', self.NO_ATTR)
+            el_open(u'otherwise', self.NO_ATTR)
             tree_to_sax(tree[3])
-            el_close(otherwise_tag, u'otherwise')
+            el_close(u'otherwise')
 
-        el_close(piecewise_tag, u'piecewise')
+        el_close(u'piecewise')
+
+    def _send_list(self, tree, list_type, attributes):
+        parser = self.parser
+        tree_to_sax = self._recursive_tree_to_sax
+
+        self._open_tag(list_type, attributes)
+        for elem in islice(tree, 1, None):
+            tree_to_sax(elem)
+        self._close_tag(list_type)
 
     def _send_function(self, fname, tree):
-        parser = self.parser
-        apply_tag = (MATHML_NAMESPACE_URI, u'apply')
-
-        parser.startElementNS(apply_tag, u'apply', self.NO_ATTR)
+        self._open_tag(u'apply', self.NO_ATTR)
         self._write_element(fname)
 
         tree_to_sax = self._recursive_tree_to_sax
         for elem in islice(tree, 1, None):
             tree_to_sax(elem)
 
-        parser.endElementNS(apply_tag, u'apply')
+        self._close_tag(u'apply')
+
+    def _open_tag(self, name, attr=NO_ATTR):
+        self.parser.startElementNS( (MATHML_NAMESPACE_URI, name), name, attr )
+
+    def _close_tag(self, name):
+        self.parser.endElementNS( (MATHML_NAMESPACE_URI, name), name )
 
     def _write_element(self, name, content=None, attr=NO_ATTR):
         parser = self.parser
@@ -293,7 +311,10 @@ def dom_to_tree(doc):
 
         constant = map_constant(mtype)
         if constant:
-            return [ u'name', constant ]
+            if constant in (u'true', u'false'):
+                return [ u'const:bool', constant ]
+            else:
+                return [ u'name', constant ]
         elif mtype == u'ci':
             return [ u'name', element.firstChild.data ]
         elif mtype == u'cn':
@@ -304,11 +325,19 @@ def dom_to_tree(doc):
                 raise NotImplementedError, u"function composition is not supported"
             name = operator.localName
 
-            operands = filter(None, imap(_recursive_dom_to_tree, islice(element.childNodes,1,None)))
+            operands = map(_recursive_dom_to_tree, islice(element.childNodes, 1, None))
             operands.insert(0, map_operator(name, name))
             return operands
         elif mtype == u'piecewise':
             return _recursive_piecewise(element)
+        elif mtype == u'list':
+            list_items = map(_recursive_dom_to_tree, element.childNodes)
+            list_items.insert(0, mtype)
+            return list_items
+        elif mtype == u'interval':
+            list_items = map(_recursive_dom_to_tree, element.childNodes)
+            list_items.insert(0, '%s:%s' % (mtype, element.closure()))
+            return list_items
         else:
             raise NotImplementedError, u"%s elements are not supported" % mtype
 

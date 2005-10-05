@@ -58,6 +58,10 @@ NARY_FUNCTIONAL_FUNCTION = u"""
 compose
 """
 
+BINARY_SET_CONTAINMENT = u"""
+in notin
+"""
+
 CONSTANTS = u"""
 pi ExponentialE ee ImaginaryI ii gamma infin infty true false NotANumber NaN
 """
@@ -68,7 +72,8 @@ UNARY_FUNCTIONS  = UNARY_ELEMENTARY_CLASSICAL_FUNCTIONS + \
                    UNARY_ARITHMETIC_FUNCTIONS + \
                    UNARY_LOGICAL_FUNCTIONS
 
-BINARY_FUNCTIONS = BINARY_ARITHMETIC_FUNCTIONS
+BINARY_FUNCTIONS = BINARY_ARITHMETIC_FUNCTIONS + \
+                   BINARY_SET_CONTAINMENT
 
 NARY_FUNCTIONS   = NARY_ARITHMETIC_FUNCTIONS + \
                    NARY_STATISTICAL_FUNCTIONS + \
@@ -170,6 +175,10 @@ class MathElement(Element):
         children = parent.childNodes
         return len(children) == 2
 
+    @method_elements(u"interval")
+    def closure(self):
+        return self.getAttribute(u'closure') or 'closed'
+
 
 class MathValue(Element):
     "Fake class containing methods for handling constants, identifiers, etc."
@@ -210,7 +219,7 @@ class MathValue(Element):
         appendChild( doc.createTextNode(value_tuple[0]) )
         appendChild( doc.createElementNS(MATHML_NAMESPACE_URI, u'sep') )
         appendChild( doc.createTextNode(value_tuple[1]) )
-        self.setAttributeNS(MATHML_NAMESPACE_URI, u'type', typename)
+        self.setAttribute(u'type', typename)
 
     @method_elements(u"cn")
     def set_value(self, value):

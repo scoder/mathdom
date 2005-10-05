@@ -2,17 +2,19 @@ import sys
 from itertools import imap
 
 try:
-    from mathml.termparser import *
-    from mathml.mathdom    import *
-    from mathml.xmlterm    import *
+    from mathml.mathdom     import MathDOM
+    from mathml.termbuilder import tree_converters
+    from mathml.termparser  import *
+    from mathml.xmlterm     import *
 except ImportError:
     # Maybe we are still before installation?
     sys.path.append('src')
     sys.path.append('../src')
 
-    from mathdom    import MathDOM
-    from termparser import *
-    from xmlterm    import *
+    from mathdom     import MathDOM
+    from termbuilder import tree_converters
+    from termparser  import *
+    from xmlterm     import *
 
 print "Please enter an infix term or leave empty to proceed with an example term."
 try:

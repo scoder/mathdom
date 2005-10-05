@@ -4,47 +4,38 @@
 Implementation of an infix term parser.
 
 Generates an AST that can be converted to SAX events using the
-mathml.xmlterm module.
+mathml.xmlterm module or to literal terms using the mathml.termbuilder
+module.
 
 Usage examples:
-(remember to run 'from mathml import mathdom, xmlterm, termparser' first!)
+(remember to run 'from mathml import termparser, termbuilder' first!)
 
 * arithmetic terms:
 
->>> from termparser import parse_term, parse_bool_expression, tree_converters
->>> term = ".1*pi+2*(1+3i)-5.6-6*-1/sin(-45*a.b) + 1"
->>> parsed = parse_term(term)
->>> parsed
-('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', (Decimal("1"), Decimal("3")))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', ('-', (u'const:integer', 1)), (u'sin', ('*', ('-', (u'const:integer', 45)), (u'name', u'a.b')))))), (u'const:integer', 1))
+>>> from termparser import parse_term, parse_bool_expression
+>>> from termbuilder import tree_converters
+>>> term = '.1*pi+2*(1+3i)-5.6-6*-1/sin(-45*a.b) + 1'
+>>> parsed_ast = parse_term(term)
+>>> parsed_ast
+('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', Complex(1+3j))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', (u'const:integer', -1), (u'sin', ('*', (u'const:integer', -45), (u'name', u'a.b')))))), (u'const:integer', 1))
 >>> converter = tree_converters['infix']
->>> converter.build(parsed)
-u'0.1 * pi + 2 * (1+3i) - 5.6 - 6 * ( - 1 ) / sin ( ( - 45 ) * a.b ) + 1'
+>>> converter.build(parsed_ast)
+u'0.1 * pi + 2 * (1+3i) - 5.6 - 6 * -1 / sin ( -45 * a.b ) + 1'
 
 
 * boolean terms:
 
->>> bool_term = "%(term)s = 1 or %(term)s > 5 and true" % {'term':term}
->>> parsed = parse_bool_expression(bool_term)
->>> parsed
-(u'or', ('=', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', (Decimal("1"), Decimal("3")))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', ('-', (u'const:integer', 1)), (u'sin', ('*', ('-', (u'const:integer', 45)), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 1)), (u'and', ('>', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', (Decimal("1"), Decimal("3")))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', ('-', (u'const:integer', 1)), (u'sin', ('*', ('-', (u'const:integer', 45)), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 5)), (u'const:bool', True)))
+>>> bool_term = '%(term)s = 1 or %(term)s > 5 and true' % {'term':term}
+>>> parsed_ast = parse_bool_expression(bool_term)
+>>> parsed_ast
+(u'or', ('=', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', Complex(1+3j))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', (u'const:integer', -1), (u'sin', ('*', (u'const:integer', -45), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 1)), (u'and', ('>', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', Complex(1+3j))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', (u'const:integer', -1), (u'sin', ('*', (u'const:integer', -45), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 5)), (u'const:bool', True)))
 >>> converter = tree_converters['postfix']
->>> converter.build(parsed)
-u'0.1 pi * 2 (1+3i) * 5.6 6 1 +- 45 +- a.b * sin / * - - 1 + + 1 = 0.1 pi * 2 (1+3i) * 5.6 6 1 +- 45 +- a.b * sin / * - - 1 + + 5 > true and or'
-
-
-* currently broken:
-
->>> tree_converters["infix"].build( parse_term("-2^2") ) # WORKS
-u'( - 2 ) ^ 2'
->>> tree_converters["infix"].build( parse_term("-(2+2)^2") ) # BREAKS PARSER
-u'- ( 2 + 2 ) ^ 2'
+>>> converter.build(parsed_ast)
+u'0.1 pi * 2 (1+3i) * 5.6 6 -1 -45 a.b * sin / * - - 1 + + 1 = 0.1 pi * 2 (1+3i) * 5.6 6 -1 -45 a.b * sin / * - - 1 + + 5 > true and or'
 """
 
 __all__ = (
     'parse_bool_expression', 'parse_term',
-    'TermBuilder', 'LiteralTermBuilder',
-    'InfixTermBuilder', 'PrefixTermBuilder', 'PostfixTermBuilder',
-    'tree_converters',
     'ParseException'   # from pyparsing
     )
 
@@ -96,8 +87,6 @@ class BaseParser(object):
             value = Complex(Decimal(t[0]), Decimal(t[1]))
         return [ (u'const:complex', value) ]
 
-    def __parse_range(s,p,t):
-        return [ (u'range',)       + tuple(t) ]
     def __parse_int_list(s,p,t):
         return [ (u'list:int',)    + tuple(t) ]
     def __parse_float_list(s,p,t):
@@ -111,16 +100,20 @@ class BaseParser(object):
     p_sign = oneOf('+ -')
 
     _p_int = Combine( Optional(p_sign) + Word(nums) )
+    _p_int.leaveWhitespace()
 
     _p_float_woE  = Literal('.') + Word(nums)
     _p_float_woE |= Word(nums) + Literal('.') + Optional(Word(nums))
     _p_float = Combine( Optional(p_sign) + _p_float_woE )
+    _p_float.leaveWhitespace()
 
     p_enotation = (Combine(Optional(p_sign) + _p_float_woE) | _p_int) + Suppress(Literal('E')) + _p_int
+    p_enotation.leaveWhitespace()
     p_enotation.setName('e-notation')
     p_enotation.setParseAction(__parse_enotation)
 
     p_complex = Optional((_p_float|_p_int) + FollowedBy(oneOf('+ -'))) + (_p_float|_p_int) + Suppress(oneOf('i j'))
+    p_complex.leaveWhitespace()
     p_complex.setParseAction(__parse_complex)
 
     p_int = _p_int + Empty()
@@ -151,12 +144,9 @@ class BaseParser(object):
     p_attribute.setName('attribute')
     p_attribute.setParseAction(__parse_attribute)
 
-    # int list = (start:stop:step) | (3,6,43,554)
+    # int list = (3,6,43,554)
     _p_int_or_name = p_int | p_attribute
-    _p_int_range_def = Literal(':') + _p_int_or_name + Optional(Literal(':') + _p_int_or_name)
-    p_int_range = Suppress('(') + Group( _p_int_or_name + Optional(_p_int_range_def) ) + Suppress(')')
-    p_int_range.setParseAction(__parse_range)
-    p_int_list = delimitedList(Group(_p_int_or_name + Optional(_p_int_range_def)))
+    p_int_list = delimitedList(_p_int_or_name)
     p_int_list.setParseAction(__parse_int_list)
 
     # typed list = (strings) | (ints) | (floats) | ...
@@ -174,10 +164,19 @@ class BaseParser(object):
 class ArithmeticParser(object):
     "Defines arithmetic terms."
 
+    interval_closure = {
+        ('[', ']') : u'closed',
+        ('[', ')') : u'closed-open',
+        ('(', ']') : u'open-closed',
+        ('(', ')') : u'open'
+        }
+
     operator_order = '^ % / * - +'
 
     def __parse_list(s,p,t):
         return [ (u'list',)  + tuple(t) ]
+    def __parse_interval(s,p,t):
+        return [ (u'interval:%s' % ArithmeticParser.interval_closure[(t[0], t[-1])],) + tuple(t[1:-1]) ]
     def __parse_function(s,p,t):
         return [ tuple(t) ]
     def __parse_case(s,p,t):
@@ -219,9 +218,10 @@ class ArithmeticParser(object):
     # numeric values = attribute | number | expression
     _p_num_atom <<= p_case | ( Suppress('(') + p_arithmetic_exp + Suppress(')') ) | BaseParser.p_num | p_function | BaseParser.p_attribute
 
-    _p_arithmethic_range  = Literal(':') + p_arithmetic_exp
-    _p_arithmethic_range += Optional(Literal(':') + p_arithmetic_exp)
-    p_arithmetic_list = delimitedList(p_arithmetic_exp + Optional(_p_arithmethic_range))
+    p_arithmetic_interval = oneOf('( [') + p_arithmetic_exp + Suppress(',') + p_arithmetic_exp + oneOf(') ]')
+    p_arithmetic_interval.setParseAction(__parse_interval)
+
+    p_arithmetic_list = delimitedList(p_arithmetic_exp)
     p_arithmetic_list.setParseAction(__parse_list)
 
     p_arithmetic_tuple = Suppress('(') + p_arithmetic_list + Suppress(')')
@@ -236,7 +236,7 @@ class BoolExpressionParser(object):
     p_cmp_operator  = oneOf(cmp_operators)
     p_cmp_operator.setName('cmp_op')
 
-    p_cmp_in = CaselessLiteral(u'in')
+    p_cmp_in = CaselessLiteral(u'in') | CaselessLiteral(u'notin')
 
     p_bool_operator = oneOf( u'= <>')
     p_bool_operator.setName('bool_op')
@@ -250,7 +250,7 @@ class BoolExpressionParser(object):
     p_str_cmp   = BaseParser.p_attribute + OneOrMore( p_cmp_operator + BaseParser.p_string )
     p_str_cmp  |= BaseParser.p_string    + OneOrMore( p_cmp_operator + BaseParser.p_attribute )
 
-    p_list_cmp = ArithmeticParser.p_arithmetic_exp + p_cmp_in + ArithmeticParser.p_arithmetic_tuple
+    p_list_cmp = ArithmeticParser.p_arithmetic_exp + p_cmp_in + ArithmeticParser.p_arithmetic_interval # p_arithmetic_tuple
 
     p_factor_cmp = ArithmeticParser.p_arithmetic_exp + Literal('|') + ArithmeticParser.p_arithmetic_exp
     p_cmp_exp = ArithmeticParser.p_arithmetic_exp + p_cmp_operator + ArithmeticParser.p_arithmetic_exp
@@ -295,227 +295,6 @@ def parse_term(term):
     if not isinstance(term, unicode):
         term = unicode(term, 'ascii')
     return CompleteArithmeticExpression.parseString(term)[0]
-
-
-
-class TermBuilder(object):
-    "Abstract superclass for term builders."
-    OPERATOR_ORDER = list(op for ops in (ArithmeticParser.operator_order, '| in',
-                                         BoolExpressionParser.cmp_operators, 'and xor or')
-                          for op in ops.split() )
-    OPERATOR_SET = frozenset(OPERATOR_ORDER)
-
-    def __init__(self):
-        self.__dispatcher = self._register_dispatchers({})
-
-    def _register_dispatchers(self, dispatcher_dict):
-        """Subclasses can modify the dictionary returned by this
-        method to register additional handlers.
-        Note that all handler methods must return iterables!"""
-        for name in dir(self):
-            if name.startswith('_handle_'):
-                method = getattr(self, name)
-                if callable(method):
-                    dispatcher_dict[ name[8:] ] = method
-        return dispatcher_dict
-
-    def build(self, tree):
-        "Call this method to build the term representation."
-        status = self._init_build_status()
-        return ' '.join( self._recursive_build(tree, status) )
-
-    def _init_build_status(self):
-        return None
-
-    def _build_children(self, operator, children, status):
-        if operator == 'name' or operator[:6] == 'const:':
-            return children
-        return [ ' '.join(operand)
-                 for operand in starmap(self._recursive_build, izip(children, repeat(status))) ]
-
-    def _handle(self, operator, operands, status):
-        "Unknown operators (including functions) end up here."
-        raise NotImplementedError, "_handle(%s)" % operator
-
-    def _handleOP(self, operator, operands, status):
-        "Arithmetic and boolean operators end up here. Default is to call self._handle()"
-        return self._handle(operator, operands, status)
-
-    def _recursive_build(self, tree, status):
-        dispatcher = self.__dispatcher
-        operator = tree[0]
-        operands = self._build_children(operator, tree[1:], status)
-
-        dispatch_name = operator.replace(':', '_') # const:*, list:*
-
-        dispatch = dispatcher.get(dispatch_name)
-        if dispatch:
-            return dispatch(operator, operands, status)
-
-        splitpos = operator.find(':')
-        if splitpos > 0:
-            dispatch = dispatcher.get(operator[:splitpos])
-            if dispatch:
-                return dispatch(operator, operands, status)
-
-        if operator in self.OPERATOR_SET:
-            return self._handleOP(operator, operands, status)
-        else:
-            return self._handle(operator, operands, status)
-
-
-class LiteralTermBuilder(TermBuilder):
-    "Abstract superclass for literal term builders."
-    def _handle_name(self, operator, operands, affin):
-        return [ unicode(str(operands[0]), 'ascii') ]
-
-    def _handle_const_boolean(self, operator, operands, affin):
-        return [ operands[0] and 'true' or 'false' ]
-
-    def _handle_const_complex(self, operator, operands, affin):
-        value = operands[0]
-        return [ u'(%s%s%si)' % (value.real_str, (value.imag >= 0) and '+' or '', value.imag_str) ]
-
-    def _handle_const_rational(self, operator, operands, affin):
-        value = operands[0]
-        return [ u'(%s/%s)' % (value.num_str, value.denom_str) ]
-
-    def _handle_const_enotation(self, operator, operands, affin):
-        return [ unicode(operands[0]) ]
-
-    def _handle_const(self, operator, operands, affin):
-        return [ unicode(str(operands[0]).lower(), 'ascii') ]
-
-    def _handle_range(self, operator, operands, affin):
-        assert operator == 'range'
-        return [ u'(%s)' % u':'.join(operands) ]
-
-    def _handle_list(self, operator, operands, affin):
-        assert operator == 'list'
-        return [ u'(%s)' % u','.join(operands) ]
-
-
-class InfixTermBuilder(LiteralTermBuilder):
-    "Convert the parse tree into a literal infix term."
-    MAX_AFFIN = len(TermBuilder.OPERATOR_ORDER)+1
-    __operator_order = TermBuilder.OPERATOR_ORDER.index
-    def _init_build_status(self):
-        return (self.MAX_AFFIN, self.MAX_AFFIN)
-
-    def _find_affin(self, operator, affin_status):
-        try:
-            affin = self.__operator_order(operator)
-        except ValueError:
-            if operator == 'case':
-                affin = self.MAX_AFFIN
-            else:
-                affin = affin_status
-        return (affin, affin_status[0])
-
-    def _build_children(self, operator, children, affin_status):
-        if operator == '-' and len(children) == 1:
-            affin = (0, affin_status[0])
-        else:
-            affin = self._find_affin(operator, affin_status)
-        return super(InfixTermBuilder, self)._build_children(operator, children, affin)
-
-    def _handle_case(self, operator, operands, affin_status):
-        assert operator == 'case'
-        result = [ 'CASE', 'WHEN', operands[0], 'THEN', operands[1] ]
-        if len(operands) > 2:
-            result.append('ELSE')
-            result.append(operands[2])
-        result.append('END')
-        return result
-
-    def _handleOP(self, operator, operands, affin_status):
-        my_affin, parent_affin = self._find_affin(operator, affin_status)
-        if my_affin >= parent_affin:
-            if len(operands) == 1:
-                return ['(', operator, operands[0], ')'] # safe bet
-            else:
-                return chain(chain(*zip(chain('(', repeat(operator)), operands)), ')')
-        else:
-            if len(operands) == 1:
-                return [operator, operands[0]]
-            else:
-                return chain((operands[0],), chain(*zip(chain(repeat(operator)),
-                                                        islice(operands,1,None))))
-
-    def _handle(self, operator, operands, affin_status):
-        return [ operator, '(', ','.join(operands), ')' ]
-
-class PostfixTermBuilder(LiteralTermBuilder):
-    "Convert the parse tree into a literal postfix term."
-    def _handle_case(self, operator, operands, _):
-        assert operator == 'case'
-        if len(operands) > 2:
-            operator = 'CASE_THEN_ELSE'
-        else:
-            operator = 'CASE_THEN'
-        return chain(reversed(operands), (operator,))
-
-    def _handle(self, operator, operands, _):
-        if operator == '-' and len(operands) == 1:
-            return [ operands[0], '+-' ]
-        else:
-            return chain(operands, repeat(operator, max(1, len(operands)-1)))
-
-class PrefixTermBuilder(LiteralTermBuilder):
-    "Convert the parse tree into a literal prefix term."
-    def _handle_case(self, operator, operands, _):
-        assert operator == 'case'
-        if len(operands) > 2:
-            operator = 'CASE_THEN_ELSE'
-        else:
-            operator = 'CASE_THEN'
-        return chain((operator,), reversed(operands))
-
-    def _handle(self, operator, operands, _):
-        if operator == '-' and len(operands) == 1:
-            return [ operands[0], '+-' ]
-        else:
-            return chain(repeat(operator, max(1, len(operands)-1)), operands)
-
-
-class OutputConversion(object):
-    "Objects of this class are used to reference the different converters."
-    __CONVERTERS = {}
-    def __init__(self):
-        pass
-
-    def register_converter(self, output_type, converter):
-        "Register a converter for an output type."
-        if not hasattr(converter, 'build'):
-            raise TypeError, "Converters must provide a 'build' method."
-        self.__CONVERTERS[output_type] = converter
-
-    def unregister_converter(self, output_type):
-        "Remove the registration for an output type."
-        del self.__CONVERTERS[output_type]
-
-    def known_types(self):
-        "Return the currently registered output types."
-        return self.__CONVERTERS.keys()
-
-    def convert_tree(self, tree, output_type):
-        "Convert a parse tree into a term of the given output type."
-        converter = self.__CONVERTERS[output_type]
-        return converter.build(tree)
-
-    def fortype(self, output_type):
-        "Return the converter for the given output type."
-        return self.__CONVERTERS.get(output_type)
-
-    def __getitem__(self, output_type):
-        return self.__CONVERTERS[output_type]
-
-
-tree_converters = OutputConversion()
-
-tree_converters.register_converter('infix',   InfixTermBuilder())
-tree_converters.register_converter('prefix',  PrefixTermBuilder())
-tree_converters.register_converter('postfix', PostfixTermBuilder())
 
 
 try:
