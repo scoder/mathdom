@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-15"
+ http-equiv="content-type">
+  <title>MathDOM - Content MathML in Python</title>
+  <meta content="Stefan Behnel" name="author">
+</head>
+<body>
+<img alt="MathDOM logo" src="logo.png"
+ style="width: 154px; height: 282px;" align="left" hspace="5" vspace="5">
+<h1>MathDOM - Content MathML in Python</h1>
+<ul>
+  <li><a href="http://sourceforge.net/projects/mathdom">Sourceforge
+project page</a></li>
+  <li><a
+ href="http://sourceforge.net/project/showfiles.php?group_id=149323">Download
+from Sourceforge</a></li>
+  <li>Current version:
+<!--CURRENT-->0.3.0<!--/CURRENT--> <a
+ href="http://sourceforge.net/project/showfiles.php?group_id=149323&amp;package_id=164840">download</a>
+  </li>
+</ul>
+<p>MathDOM is a set of Python 2.4 modules (using <a
+ href="http://pyxml.sourceforge.net/">PyXML</a> and <a
+ href="http://pyparsing.sourceforge.net/">pyparsing</a>) that
+import mathematical terms as a <a
+ href="http://www.w3.org/TR/MathML2/chapter4.html">Content</a>
+<a href="http://www.w3.org/TR/MathML2/">MathML</a> DOM. It currently
+parses
+MathML
+and literal infix terms into a DOM document and writes out MathML and
+literal
+infix/prefix/postfix terms. The DOM elements are enhanced by domain
+specific
+methods that
+make using the DOM a little easier.</p>
+<p>You can call it the shortest way between different term
+representations and a Content MathML DOM. Ever noticed the annoying
+differences between terms in different programming languages? Build
+your application around the DOM and stop caring about the term
+representation that users prefer or that your machine can execute. If
+you need a different representation, add a converter, but don't change
+the model. Literal terms are connected through an intermediate AST step
+that makes writing converters for Python/SQL/yourfavorite easier.</p>
+<p>MathML has received a lot of support in mathematical software as
+well as browsers and represents a comfortable layer for the semantic
+exchange of mathematics - see <a
+ href="http://www.w3.org/Math/Software/">http://www.w3.org/Math/Software/</a></p>
+<p>And now, Python has it, too! :)</p>
+<p>I'd like to invite everyone who is interested to play with it and to
+comment on the current (preliminary) state. Note that Content MathML
+support is not complete, as the primary focus is on term
+representation. It does, however, handle pretty complex things and I'd
+be glad to see currently unsupported terms and MathML documents that
+are worth being supported in the future.<br>
+</p>
+<p align="right">© Stefan Behnel, 2005<br>
+<a href="http://www.sourceforge.net/"><img alt="SourceForge Logo"
+ src="http://sourceforge.net/sflogo.php?group_id=149323&amp;type=1"
+ style="border: 0px solid ; width: 88px; height: 31px;"></a>
+<a href="http://sourceforge.net/donate/index.php?group_id=149323"><img
+ src="http://images.sourceforge.net/images/project-support.jpg"
+ alt="Support This Project" border="0" height="32" width="88"> </a></p>
+</body>
+</html>
