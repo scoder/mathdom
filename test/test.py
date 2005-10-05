@@ -43,6 +43,7 @@ TERMS = {
     }
 
 BOOLEAN_TERMS = {
+    'true or false'  : True,
     'true and false' : False,
     '1+1 < 2+2'  : True,
     '1 in (3,4)' : False,

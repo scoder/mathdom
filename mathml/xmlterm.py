@@ -57,7 +57,7 @@ Usage examples:
 >>> from termbuilder import tree_converters
 >>> ast = dom_to_tree(doc)
 >>> ast
-[u'or', ['=', ['+', ['*', [u'name', 'pi'], [u'const:complex', Complex(1+0.3j)]], [u'const:integer', 1]], [u'const:integer', 1]], [u'and', ['>', ['+', ['*', [u'name', 'pi'], [u'const:complex', Complex(1+0.3j)]], [u'const:integer', 1]], [u'const:integer', 5]], [u'name', 'true']]]
+[u'or', ['=', ['+', ['*', [u'name', u'pi'], [u'const:complex', Complex(1+0.3j)]], [u'const:integer', 1]], [u'const:integer', 1]], [u'and', ['>', ['+', ['*', [u'name', u'pi'], [u'const:complex', Complex(1+0.3j)]], [u'const:integer', 1]], [u'const:integer', 5]], [u'const:bool', True]]]
 >>> converter = tree_converters['infix']
 >>> converter.build(ast)
 u'pi * (1+0.3i) + 1 = 1 or pi * (1+0.3i) + 1 > 5 and true'
@@ -312,7 +312,7 @@ def dom_to_tree(doc):
         constant = map_constant(mtype)
         if constant:
             if constant in (u'true', u'false'):
-                return [ u'const:bool', constant ]
+                return [ u'const:bool', constant == u'true' ]
             else:
                 return [ u'name', constant ]
         elif mtype == u'ci':
