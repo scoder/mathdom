@@ -3,7 +3,7 @@ setup(
     name='mathdom',
     version='0.4.0',
     package_dir={'mathml': 'src'},
-    packages=['mathml'],
+    packages=['mathml', 'mathml.utils'],
 
     description='MathDOM - Content MathML in Python',
     long_description="""MathDOM - Content MathML in Python
