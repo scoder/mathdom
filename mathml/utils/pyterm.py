@@ -1,4 +1,8 @@
-from termbuilder import InfixTermBuilder
+try:
+    from mathml.termbuilder import InfixTermBuilder
+except ImportError:
+    # for testing
+    from termbuilder import InfixTermBuilder
 
 class PyTermBuilder(InfixTermBuilder):
     _INTERVAL_NOTATION = {
