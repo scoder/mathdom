@@ -7,6 +7,8 @@ from decimal import Decimal
 
 
 class Complex(complex):
+    TYPE_NAME = u'complex'
+
     __ZERO = Decimal(0)
     def __new__(cls, real, imag=None):
         if imag is None:
@@ -52,6 +54,8 @@ class Complex(complex):
 
 
 class Rational(Decimal):
+    TYPE_NAME = u'rational'
+
     def __new__(cls, num, denom=None):
         if denom is None:
             if isinstance(num, cls):
@@ -90,6 +94,8 @@ class Rational(Decimal):
 
 
 class ENotation(Decimal):
+    TYPE_NAME = u'e-notation'
+
     def __new__(cls, num, exponent=None):
         if exponent is None:
             if isinstance(num, cls):

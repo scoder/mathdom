@@ -10,6 +10,8 @@ from itertools import chain
 from xml.dom import Node, getDOMImplementation
 from xml.dom.Element import Element
 from xml.dom.ext import Print, PrettyPrint
+from xml.dom.ext.reader.Sax2 import Reader
+
 
 from decimal import Decimal
 
@@ -104,7 +106,7 @@ def method_elements(element_names=u"", defined_in=u""):
 
     return register_function
 
-# the same for all elements
+# the same for all elements:
 def register_method(function):
     new_function = (function.func_name, function)
     try:
@@ -147,9 +149,26 @@ class MathElement(Element):
     def iternumbervalues(self):
         return iter(n.value() for n in self.getElementsByTagName(u'cn'))
 
+    @register_method
+    def iteroperators(self):
+        return iter(e.firstChild for e in self.getElementsByTagName(u'apply'))
+
     @method_elements(u"apply")
     def operator(self):
         return self.firstChild
+
+    @method_elements(u"apply")
+    def operatorname(self):
+        return self.firstChild.localName
+
+    @method_elements(u"apply")
+    def set_operator(self, new_operator):
+        doc = self.ownerDocument
+        if isinstance(new_operator, (str, unicode)):
+            operator = doc.createElementNS(MATHML_NAMESPACE_URI, new_operator)
+        else:
+            operator = new_operator
+        self.childNodes[:1] = [ operator ]
 
     @method_elements(u"apply")
     def operands(self):
@@ -222,13 +241,25 @@ class MathValue(Element):
         self.setAttribute(u'type', typename)
 
     @method_elements(u"cn")
-    def set_value(self, value):
-        if isinstance(value, (complex, Complex)):
+    def set_value(self, value, type_name=None):
+        if isinstance(value, complex):
             self.set_complex(value)
+            return
         elif isinstance(value, Rational):
             self.set_rational(value)
-        else:
-            raise NotImplementedError, "Invalid data type."
+            return
+        elif type_name is None:
+            try:
+                type_name = value.TYPE_NAME
+            except AttributeError:
+                if isinstance(value, (int, long)):
+                    type_name = u'integer'
+                elif isinstance(value, float):
+                    type_name = u'real'
+                else:
+                    raise TypeError, "Invalid value type. Please specify type name."
+        doc = self.ownerDocument
+        self.childNodes[:] = [ doc.createTextNode(unicode(value)) ]
 
     @method_elements(u"cn")
     def set_complex(self, value):
@@ -272,11 +303,18 @@ class MathValue(Element):
 
 def augmentElements(node):
     "Weave methods into DOM Element objects."
-    if node.nodeType == node.ELEMENT_NODE:
+    node_class = node.__class__
+    if node.nodeType == node.DOCUMENT_NODE:
+        for method_name, method in vars(MathDocument).iteritems():
+            if method_name.startswith('_'):
+                continue
+            new_method = new.instancemethod(method, node, node_class)
+            setattr(node, method_name, new_method)
+    elif node.nodeType == node.ELEMENT_NODE:
         element_methods = METHODS_BY_ELEMENT_NAME.get(node.localName, ())
         common_methods  = METHODS_BY_ELEMENT_NAME.get(None, ())
         for method_name, method in chain(element_methods, common_methods):
-            new_method = new.instancemethod(method, node, Node)
+            new_method = new.instancemethod(method, node, node_class)
             setattr(node, method_name, new_method)
 
     for child in tuple(node.childNodes):
@@ -348,24 +386,23 @@ Element.logbase = Qualifier('logbase', u'log')
 
 
 class MathDOM(object):
-    from xml.dom.ext.reader.Sax2 import Reader
     def __init__(self, document):
         augmentElements(document)
         self.__document = document
 
     @classmethod
     def fromMathmlString(cls, mathml):
-        dom_builder = cls.Reader()
+        dom_builder = Reader()
         return MathDOM( dom_builder.fromString(mathml) )
 
     @classmethod
     def fromMathmlFile(cls, input):
-        dom_builder = cls.Reader()
+        dom_builder = Reader()
         return MathDOM( dom_builder.fromStream(input) )
 
     @classmethod
     def fromMathmlSax(cls, input, sax_parser):
-        dom_builder = cls.Reader(parser=sax_parser)
+        dom_builder = Reader(parser=sax_parser)
         return MathDOM( dom_builder.fromString(input) )
 
     def __getattr__(self, name):
@@ -382,3 +419,30 @@ class MathDOM(object):
         else:
             Print(self.__document, out)
 
+    # new DOM methods:
+
+    def createApply(self, name, *args):
+        create_element = self.__document.createElementNS
+        apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
+        function_tag = create_element(MATHML_NAMESPACE_URI, name)
+        apply_tag.appendChild(function_tag)
+        augmentElements(apply_tag)
+        if args:
+            function_tag.childNodes[:] = args
+        return apply_tag
+
+    def createFunction(self, name, *args):
+        create_element = self.__document.createElementNS
+        apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
+        function_tag = create_element(MATHML_NAMESPACE_URI, name)
+        apply_tag.appendChild(function_tag)
+        augmentElements(apply_tag)
+        if args:
+            function_tag.childNodes[:] = args
+        return apply_tag
+
+    def createConstant(self, value):
+        create_element = self.__document.createElementNS
+        cn_tag = create_element(MATHML_NAMESPACE_URI, u'cn')
+        cn_tag.set_value(value)
+        return cn_tag
