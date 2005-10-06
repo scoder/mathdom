@@ -31,17 +31,15 @@ print "ORIGINAL:"
 print term
 print
 
-try:
+doc = None
+for parser in (BoolExpressionSaxParser, TermSaxParser, TermListSaxParser):
     try:
-        doc = MathDOM.fromMathmlSax(term, TermSaxParser())
+        doc = MathDOM.fromMathmlSax(term, parser())
     except ParseException, e:
-        print "Parsing as term failed, trying boolean expression ..."
-        print
+        print "Parsing with %s failed: %s" % (parser.__name__, unicode(e).encode('UTF-8'))
 
-        doc = MathDOM.fromMathmlSax(term, BoolExpressionSaxParser())
-except ParseException, e:
-    print "Parsing as boolean expression failed:", unicode(e).encode('UTF-8')
-    print "The term is not parsable, neither as arithmetic term not as boolean expression."
+if doc is None:
+    print "The term is not parsable."
     sys.exit(0)
 
 

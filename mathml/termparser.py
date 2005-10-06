@@ -161,7 +161,7 @@ class BaseParser(object):
     p_typed_tuple = Suppress('(') + p_any_list + Suppress(')')
 
 
-class ArithmeticParser(object):
+class InfixTermParser(object):
     "Defines arithmetic terms."
 
     interval_closure = {
@@ -176,7 +176,7 @@ class ArithmeticParser(object):
     def __parse_list(s,p,t):
         return [ (u'list',)  + tuple(t) ]
     def __parse_interval(s,p,t):
-        return [ (u'interval:%s' % ArithmeticParser.interval_closure[(t[0], t[-1])],) + tuple(t[1:-1]) ]
+        return [ (u'interval:%s' % InfixTermParser.interval_closure[(t[0], t[-1])],) + tuple(t[1:-1]) ]
     def __parse_function(s,p,t):
         return [ tuple(t) ]
     def __parse_case(s,p,t):
@@ -227,7 +227,7 @@ class ArithmeticParser(object):
     p_arithmetic_tuple = Suppress('(') + p_arithmetic_list + Suppress(')')
 
 
-class BoolExpressionParser(object):
+class InfixBoolExpressionParser(object):
     "Defines p_exp for comparisons and p_bool_exp for boolean expressions."
 
     cmp_operators = '= != <> > < <= >='
@@ -250,10 +250,10 @@ class BoolExpressionParser(object):
     p_str_cmp   = BaseParser.p_attribute + OneOrMore( p_cmp_operator + BaseParser.p_string )
     p_str_cmp  |= BaseParser.p_string    + OneOrMore( p_cmp_operator + BaseParser.p_attribute )
 
-    p_list_cmp = ArithmeticParser.p_arithmetic_exp + p_cmp_in + ArithmeticParser.p_arithmetic_interval # p_arithmetic_tuple
+    p_list_cmp = InfixTermParser.p_arithmetic_exp + p_cmp_in + InfixTermParser.p_arithmetic_interval # p_arithmetic_tuple
 
-    p_factor_cmp = ArithmeticParser.p_arithmetic_exp + Literal('|') + ArithmeticParser.p_arithmetic_exp
-    p_cmp_exp = ArithmeticParser.p_arithmetic_exp + p_cmp_operator + ArithmeticParser.p_arithmetic_exp
+    p_factor_cmp = InfixTermParser.p_arithmetic_exp + Literal('|') + InfixTermParser.p_arithmetic_exp
+    p_cmp_exp = InfixTermParser.p_arithmetic_exp + p_cmp_operator + InfixTermParser.p_arithmetic_exp
 
     p_exp = p_str_cmp | p_list_cmp | p_cmp_exp | p_factor_cmp | p_bool_cmp
     p_exp.setParseAction(_build_expression_tree)
@@ -272,16 +272,18 @@ class BoolExpressionParser(object):
 
     _p_atom_exp <<= p_not_exp | Suppress('(') + p_bool_exp + Suppress(')') | p_exp
 
-    # repair CASE statement in ArithmeticParser
-    ArithmeticParser._p_bool_expression <<= p_bool_exp
+    # repair CASE statement in InfixTermParser
+    InfixTermParser._p_bool_expression <<= p_bool_exp
 
 
 # optimize parser
-CompleteBoolExpression       = BoolExpressionParser.p_bool_exp   + StringEnd()
-CompleteArithmeticExpression = ArithmeticParser.p_arithmetic_exp + StringEnd()
+CompleteBoolExpression = InfixBoolExpressionParser.p_bool_exp + StringEnd()
+CompleteTerm           = InfixTermParser.p_arithmetic_exp     + StringEnd()
+CompleteTermList       = InfixTermParser.p_arithmetic_list    + StringEnd()
 
 CompleteBoolExpression.streamline()
-CompleteArithmeticExpression.streamline()
+CompleteTerm.streamline()
+CompleteTermList.streamline()
 
 
 # main module functions:
@@ -294,7 +296,12 @@ def parse_bool_expression(expression):
 def parse_term(term):
     if not isinstance(term, unicode):
         term = unicode(term, 'ascii')
-    return CompleteArithmeticExpression.parseString(term)[0]
+    return CompleteTerm.parseString(term)[0]
+
+def parse_term_list(term):
+    if not isinstance(term, unicode):
+        term = unicode(term, 'ascii')
+    return CompleteTermList.parseString(term)[0]
 
 
 try:

@@ -303,16 +303,10 @@ class MathValue(Element):
 
 def augmentElements(node):
     "Weave methods into DOM Element objects."
-    node_class = node.__class__
-    if node.nodeType == node.DOCUMENT_NODE:
-        for method_name, method in vars(MathDocument).iteritems():
-            if method_name.startswith('_'):
-                continue
-            new_method = new.instancemethod(method, node, node_class)
-            setattr(node, method_name, new_method)
-    elif node.nodeType == node.ELEMENT_NODE:
+    if node.nodeType == node.ELEMENT_NODE:
         element_methods = METHODS_BY_ELEMENT_NAME.get(node.localName, ())
         common_methods  = METHODS_BY_ELEMENT_NAME.get(None, ())
+        node_class = node.__class__
         for method_name, method in chain(element_methods, common_methods):
             new_method = new.instancemethod(method, node, node_class)
             setattr(node, method_name, new_method)

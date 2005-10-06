@@ -18,13 +18,13 @@ except ImportError:
 
 from itertools import *
 
-from termparser import ArithmeticParser, BoolExpressionParser
+from termparser import InfixTermParser, InfixBoolExpressionParser
 
 
 class TermBuilder(object):
     "Abstract superclass for term builders."
-    OPERATOR_ORDER = list(op for ops in (ArithmeticParser.operator_order, '| in',
-                                         BoolExpressionParser.cmp_operators, 'and xor or')
+    OPERATOR_ORDER = list(op for ops in (InfixTermParser.operator_order, '| in',
+                                         InfixBoolExpressionParser.cmp_operators, 'and xor or')
                           for op in ops.split() )
     OPERATOR_SET = frozenset(OPERATOR_ORDER)
 

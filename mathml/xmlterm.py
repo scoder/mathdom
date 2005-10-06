@@ -63,7 +63,7 @@ Usage examples:
 u'pi * (1+0.3i) + 1 = 1 or pi * (1+0.3i) + 1 > 5 and true'
 """
 
-__all__ = ('BoolExpressionSaxParser', 'TermSaxParser',
+__all__ = ('BoolExpressionSaxParser', 'TermSaxParser', 'TermListSaxParser',
            'dom_to_tree', 'serialize_dom')
 
 try:
@@ -76,7 +76,7 @@ from xml.sax.xmlreader import XMLReader, AttributesNSImpl
 from xml.sax.handler import feature_namespaces
 
 from mathdom import MATHML_NAMESPACE_URI
-from termparser import parse_bool_expression, parse_term
+from termparser import parse_bool_expression, parse_term, parse_term_list
 from termbuilder import tree_converters
 
 
@@ -375,6 +375,19 @@ class TermSaxParser(SaxTerm):
         if hasattr(term, 'read'): # StringIO?
             term = term.read()
         self.tree_to_sax( parse_term(term) )
+
+class TermListSaxParser(SaxTerm):
+    "Parse a list of terms into SAX events."
+    def parse(self, term_list):
+        if hasattr(term_list, 'getCharacterStream'): # InputSource?
+            stream = term_list.getCharacterStream()
+            if stream:
+                term_list = stream
+            else:
+                term_list = term_list.getByteStream()
+        if hasattr(term_list, 'read'): # StringIO?
+            term_list = term_list.read()
+        self.tree_to_sax( parse_term_list(term_list) )
 
 
 try:
