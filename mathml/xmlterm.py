@@ -10,10 +10,12 @@ Usage examples:
 * Building a MathDOM document from a boolean expression in infix notation:
 
 >>> from mathdom import MathDOM
->>> from xmlterm import BoolExpressionSaxParser
+>>> from xmlterm import SaxTerm
 >>> term = 'pi*(1+.3i) + 1'
 >>> bool_term = '%(term)s = 1 or %(term)s > 5 and true' % {'term':term}
->>> doc = MathDOM.fromMathmlSax(bool_term, BoolExpressionSaxParser())
+>>> doc = MathDOM.fromSax(bool_term, SaxTerm.for_input_type('infix_bool')())
+>>> # or use this:
+>>> doc = MathDOM.fromString(bool_term, 'infix_bool')
 >>> doc.toMathml(indent=True)
 <?xml version='1.0' encoding='UTF-8'?>
 <apply xmlns='http://www.w3.org/1998/Math/MathML'>
@@ -63,8 +65,7 @@ Usage examples:
 u'pi * (1+0.3i) + 1 = 1 or pi * (1+0.3i) + 1 > 5 and true'
 """
 
-__all__ = ('BoolExpressionSaxParser', 'TermSaxParser', 'TermListSaxParser',
-           'dom_to_tree', 'serialize_dom')
+__all__ = ('dom_to_tree', 'serialize_dom', 'SaxTerm')
 
 try:
     from psyco.classes import *
@@ -75,15 +76,10 @@ from itertools import *
 from xml.sax.xmlreader import XMLReader, AttributesNSImpl
 from xml.sax.handler import feature_namespaces
 
-from mathdom import MATHML_NAMESPACE_URI
-from termparser import parse_bool_expression, parse_term, parse_term_list
-from termbuilder import tree_converters
+from mathml             import MATHML_NAMESPACE_URI
+from mathml.termparser  import term_parsers
+from mathml.termbuilder import tree_converters
 
-
-try:
-    from decimal import Decimal
-except ImportError:
-    Decimal = float # Oh, well ...
 
 def mkstr(value):
     if isinstance(value, (str, unicode)):
@@ -115,144 +111,6 @@ _FUNCTION_MAP = {
     '<=': u'leq',
     '<' : u'lt',
     }
-
-class SaxTerm(XMLReader):
-    NO_ATTR = AttributesNSImpl({}, {})
-    map_operator = _FUNCTION_MAP.get
-    map_constant = _ELEMENT_CONSTANT_MAP.get
-
-    def __init__(self, sax_parser=None):
-        XMLReader.__init__(self)
-        if sax_parser:
-            self.setContentHandler(sax_parser)
-
-    def setContentHandler(self, sax_parser):
-        XMLReader.setContentHandler(self, sax_parser)
-        self.parser = sax_parser
-
-    def setFeature(self, name, value):
-        if name == feature_namespaces:
-            assert value
-        else:
-            XMLReader.setFeature(self, name, value)
-
-    def tree_to_sax(self, tree):
-        parser = self.parser
-        parser.startDocument()
-        parser.startPrefixMapping(None, MATHML_NAMESPACE_URI)
-        self._recursive_tree_to_sax(tree)
-        parser.endPrefixMapping(None)
-        parser.endDocument()
-
-    def _attributes(self, **attributes):
-        values, qnames = {}, {}
-        for name, value in attributes.iteritems():
-            name = unicode(name)
-            ns_name = (None, name)
-            qnames[ns_name] = name
-            values[ns_name] = value
-
-        return AttributesNSImpl(values, qnames)
-
-    def _recursive_tree_to_sax(self, tree):
-        operator = tree[0]
-        mapped_operator = self.map_operator(operator)
-        if mapped_operator:
-            self._send_function(mapped_operator, tree)
-        elif operator == u'name':
-            name = mkstr(tree[1])
-            constant = self.map_constant(name)
-            if constant:
-                self._write_element(constant)
-            else:
-                self._write_element(u'ci', name)
-        elif operator.startswith(u'const:'):
-            if operator == u'const:bool':
-                self._write_element(tree[1] and u'true' or u'false')
-            elif operator in (u'const:complex', u'const:rational'):
-                self._send_bin_constant(operator[6:], tree[1])
-            elif operator == u'const:enotation':
-                self._send_bin_constant('e-notation', tree[1])
-            else:
-                self._write_element(u'cn', mkstr(tree[1]),
-                                    self._attributes(type=operator[6:]))
-        elif operator == u'case':
-            self._send_case(tree)
-        elif operator[:4] == u'list':
-            self._send_list(tree, u'list', self.NO_ATTR)
-        elif operator[:9] == u'interval:':
-            closure = self._attributes(closure=operator[9:] or 'closed')
-            self._send_list(tree, u'interval', closure)
-        else:
-            self._send_function(operator, tree)
-
-    def _send_bin_constant(self, typename, value):
-        try:
-            parts = tuple(value)
-        except:
-            raise NotImplementedError, "Only MathDOM types are constant pairs."
-
-        parts = map(mkstr, parts)
-
-        parser  = self.parser
-        self._open_tag(u'cn', self._attributes(type=typename))
-        parser.characters(parts[0])
-        self._write_element(u'sep')
-        parser.characters(parts[1])
-        self._close_tag(u'cn')
-
-    def _send_case(self, tree):
-        el_open  = self._open_tag
-        el_close = self._close_tag
-        tree_to_sax = self._recursive_tree_to_sax
-
-        el_open(u'piecewise', self.NO_ATTR)
-
-        el_open(u'piece', self.NO_ATTR)
-        tree_to_sax(tree[2])
-        tree_to_sax(tree[1])
-        self._close_tag(u'piece')
-
-        if len(tree) > 3:
-            el_open(u'otherwise', self.NO_ATTR)
-            tree_to_sax(tree[3])
-            el_close(u'otherwise')
-
-        el_close(u'piecewise')
-
-    def _send_list(self, tree, list_type, attributes):
-        parser = self.parser
-        tree_to_sax = self._recursive_tree_to_sax
-
-        self._open_tag(list_type, attributes)
-        for elem in islice(tree, 1, None):
-            tree_to_sax(elem)
-        self._close_tag(list_type)
-
-    def _send_function(self, fname, tree):
-        self._open_tag(u'apply', self.NO_ATTR)
-        self._write_element(fname)
-
-        tree_to_sax = self._recursive_tree_to_sax
-        for elem in islice(tree, 1, None):
-            tree_to_sax(elem)
-
-        self._close_tag(u'apply')
-
-    def _open_tag(self, name, attr=NO_ATTR):
-        self.parser.startElementNS( (MATHML_NAMESPACE_URI, name), name, attr )
-
-    def _close_tag(self, name):
-        self.parser.endElementNS( (MATHML_NAMESPACE_URI, name), name )
-
-    def _write_element(self, name, content=None, attr=NO_ATTR):
-        parser = self.parser
-        tag = (MATHML_NAMESPACE_URI, name)
-
-        parser.startElementNS(tag, name, attr)
-        if content:
-            parser.characters(content)
-        parser.endElementNS(tag, name)
 
 
 # main module functions:
@@ -350,9 +208,53 @@ def dom_to_tree(doc):
 
 # INPUT:
 
-class BoolExpressionSaxParser(SaxTerm):
-    "Parse a boolean expression into SAX events."
-    def parse(self, expression):
+class SaxTerm(XMLReader):
+    """AST reader that outputs SAX events.
+
+    For converting AST trees, just call tree_to_sax.
+
+    For parsing literal terms, you may either call parse_term directly
+    or use the for_input_type class method to retrieve a sax reader
+    class.  The latter can be used as input source to any SAX parser.
+    """
+
+    __SAX_READERS = {}
+
+    NO_ATTR = AttributesNSImpl({}, {})
+    map_operator = _FUNCTION_MAP.get
+    map_constant = _ELEMENT_CONSTANT_MAP.get
+
+    def __init__(self, sax_parser=None):
+        XMLReader.__init__(self)
+        if sax_parser:
+            self.setContentHandler(sax_parser)
+
+    def setContentHandler(self, sax_parser):
+        XMLReader.setContentHandler(self, sax_parser)
+        self.parser = sax_parser
+
+    def setFeature(self, name, value):
+        if name == feature_namespaces:
+            assert value
+        else:
+            XMLReader.setFeature(self, name, value)
+
+    @classmethod
+    def for_input_type(cls, input_type):
+        "Returns a SAX reader class for parsing terms of type input_type."
+        try:
+            return cls.__SAX_READERS[(cls, input_type)]
+        except KeyError:
+            pass
+
+        class SaxGenerator(cls):
+            def parse(self, term):
+                self.parse_term(term, input_type)
+
+        cls.__SAX_READERS[(cls, input_type)] = SaxGenerator
+        return SaxGenerator
+
+    def parse_term(self, expression, input_type):
         if hasattr(expression, 'getCharacterStream'): # InputSource?
             stream = expression.getCharacterStream()
             if stream:
@@ -361,40 +263,132 @@ class BoolExpressionSaxParser(SaxTerm):
                 expression = expression.getByteStream()
         if hasattr(expression, 'read'): # StringIO?
             expression = expression.read()
-        self.tree_to_sax( parse_bool_expression(expression) )
 
-class TermSaxParser(SaxTerm):
-    "Parse a term into SAX events."
-    def parse(self, term):
-        if hasattr(term, 'getCharacterStream'): # InputSource?
-            stream = term.getCharacterStream()
-            if stream:
-                term = stream
-            else:
-                term = term.getByteStream()
-        if hasattr(term, 'read'): # StringIO?
-            term = term.read()
-        self.tree_to_sax( parse_term(term) )
+        term_parser = term_parsers[input_type]
+        self.tree_to_sax( term_parser.parse(expression) )
 
-class TermListSaxParser(SaxTerm):
-    "Parse a list of terms into SAX events."
-    def parse(self, term_list):
-        if hasattr(term_list, 'getCharacterStream'): # InputSource?
-            stream = term_list.getCharacterStream()
-            if stream:
-                term_list = stream
+    def tree_to_sax(self, tree):
+        parser = self.parser
+        parser.startDocument()
+        parser.startPrefixMapping(None, MATHML_NAMESPACE_URI)
+        self._recursive_tree_to_sax(tree)
+        parser.endPrefixMapping(None)
+        parser.endDocument()
+
+    def _attributes(self, **attributes):
+        values, qnames = {}, {}
+        for name, value in attributes.iteritems():
+            name = unicode(name)
+            ns_name = (None, name)
+            qnames[ns_name] = name
+            values[ns_name] = value
+
+        return AttributesNSImpl(values, qnames)
+
+    def _recursive_tree_to_sax(self, tree):
+        operator = tree[0]
+        mapped_operator = self.map_operator(operator)
+        if mapped_operator:
+            self._send_function(mapped_operator, tree)
+        elif operator == u'name':
+            name = mkstr(tree[1])
+            constant = self.map_constant(name)
+            if constant:
+                self._write_element(constant)
             else:
-                term_list = term_list.getByteStream()
-        if hasattr(term_list, 'read'): # StringIO?
-            term_list = term_list.read()
-        self.tree_to_sax( parse_term_list(term_list) )
+                self._write_element(u'ci', name)
+        elif operator.startswith(u'const:'):
+            if operator == u'const:bool':
+                self._write_element(tree[1] and u'true' or u'false')
+            elif operator in (u'const:complex', u'const:rational'):
+                self._send_bin_constant(operator[6:], tree[1])
+            elif operator == u'const:enotation':
+                self._send_bin_constant('e-notation', tree[1])
+            else:
+                self._write_element(u'cn', mkstr(tree[1]),
+                                    self._attributes(type=operator[6:]))
+        elif operator == u'case':
+            self._send_case(tree)
+        elif operator[:4] == u'list':
+            self._send_list(tree, u'list', self.NO_ATTR)
+        elif operator[:9] == u'interval:':
+            closure = self._attributes(closure=operator[9:] or 'closed')
+            self._send_list(tree, u'interval', closure)
+        else:
+            self._send_function(operator, tree)
+
+    def _send_bin_constant(self, typename, value):
+        try:
+            parts = tuple(value)
+        except:
+            raise NotImplementedError, "Only MathDOM types are constant pairs."
+
+        parts = map(mkstr, parts)
+
+        parser  = self.parser
+        self._open_tag(u'cn', self._attributes(type=typename))
+        parser.characters(parts[0])
+        self._write_element(u'sep')
+        parser.characters(parts[1])
+        self._close_tag(u'cn')
+
+    def _send_case(self, tree):
+        el_open  = self._open_tag
+        el_close = self._close_tag
+        tree_to_sax = self._recursive_tree_to_sax
+
+        el_open(u'piecewise', self.NO_ATTR)
+
+        el_open(u'piece', self.NO_ATTR)
+        tree_to_sax(tree[2])
+        tree_to_sax(tree[1])
+        self._close_tag(u'piece')
+
+        if len(tree) > 3:
+            el_open(u'otherwise', self.NO_ATTR)
+            tree_to_sax(tree[3])
+            el_close(u'otherwise')
+
+        el_close(u'piecewise')
+
+    def _send_list(self, tree, list_type, attributes):
+        tree_to_sax = self._recursive_tree_to_sax
+
+        self._open_tag(list_type, attributes)
+        for elem in islice(tree, 1, None):
+            tree_to_sax(elem)
+        self._close_tag(list_type)
+
+    def _send_function(self, fname, tree):
+        self._open_tag(u'apply', self.NO_ATTR)
+        self._write_element(fname)
+
+        tree_to_sax = self._recursive_tree_to_sax
+        for elem in islice(tree, 1, None):
+            tree_to_sax(elem)
+
+        self._close_tag(u'apply')
+
+    def _open_tag(self, name, attr=NO_ATTR):
+        self.parser.startElementNS( (MATHML_NAMESPACE_URI, name), name, attr )
+
+    def _close_tag(self, name):
+        self.parser.endElementNS( (MATHML_NAMESPACE_URI, name), name )
+
+    def _write_element(self, name, content=None, attr=NO_ATTR):
+        parser = self.parser
+        tag = (MATHML_NAMESPACE_URI, name)
+
+        parser.startElementNS(tag, name, attr)
+        if content:
+            parser.characters(content)
+        parser.endElementNS(tag, name)
 
 
 try:
     import sys
     from optimize import bind_all
     bind_all(sys.modules[__name__])
-    bind_all(pyparsing)
     del sys, bind_all
 except:
     pass

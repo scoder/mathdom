@@ -30,7 +30,7 @@ class PyTermBuilder(InfixTermBuilder):
 
     def _handle_name(self, operator, operands, affin):
         name = unicode(str(operands[0]), 'ascii')
-        return [ map_name(name, name) ]
+        return [ self.map_name(name, name) ]
 
     def _handle_const_bool(self, operator, operands, affin):
         return [ operands[0] and 'True' or 'False' ]

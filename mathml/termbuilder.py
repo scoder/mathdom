@@ -18,7 +18,7 @@ except ImportError:
 
 from itertools import *
 
-from termparser import InfixTermParser, InfixBoolExpressionParser
+from mathml.termparser import InfixTermParser, InfixBoolExpressionParser, ConverterRegistry
 
 
 class TermBuilder(object):
@@ -214,40 +214,18 @@ class PrefixTermBuilder(LiteralTermBuilder):
             return chain(repeat(self._map_operator(operator), max(1, len(operands)-1)), operands)
 
 
-class OutputConversion(object):
+# converter registry:
+
+class TermGeneration(ConverterRegistry):
     "Objects of this class are used to reference the different converters."
-    __CONVERTERS = {}
-    def __init__(self):
-        pass
-
-    def register_converter(self, output_type, converter):
-        "Register a converter for an output type."
-        if not hasattr(converter, 'build'):
-            raise TypeError, "Converters must provide a 'build' method."
-        self.__CONVERTERS[output_type] = converter
-
-    def unregister_converter(self, output_type):
-        "Remove the registration for an output type."
-        del self.__CONVERTERS[output_type]
-
-    def known_types(self):
-        "Return the currently registered output types."
-        return self.__CONVERTERS.keys()
-
+    _METHOD_NAME = 'build'
     def convert_tree(self, tree, output_type):
         "Convert a parse tree into a term of the given output type."
-        converter = self.__CONVERTERS[output_type]
+        converter = self._converters[output_type]
         return converter.build(tree)
 
-    def fortype(self, output_type):
-        "Return the converter for the given output type."
-        return self.__CONVERTERS.get(output_type)
 
-    def __getitem__(self, output_type):
-        return self.__CONVERTERS[output_type]
-
-
-tree_converters = OutputConversion()
+tree_converters = TermGeneration()
 
 tree_converters.register_converter('infix',   InfixTermBuilder())
 tree_converters.register_converter('prefix',  PrefixTermBuilder())

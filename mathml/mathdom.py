@@ -1,10 +1,8 @@
 #!/usr/bin/python
 
-__all__ = ['MathDOM', 'MATHML_NAMESPACE_URI']
+__all__ = [ 'MathDOM' ]
 
-MATHML_NAMESPACE_URI = u"http://www.w3.org/1998/Math/MathML"
-
-import sys, new, types, re
+import sys, new
 from itertools import chain
 
 from xml.dom import Node, getDOMImplementation
@@ -13,10 +11,9 @@ from xml.dom.ext import Print, PrettyPrint
 from xml.dom.ext.reader.Sax2 import Reader
 
 
-from decimal import Decimal
-
-
-from datatypes import Decimal, Complex, Rational, ENotation
+from mathml           import MATHML_NAMESPACE_URI
+from mathml.xmlterm   import SaxTerm
+from mathml.datatypes import Decimal, Complex, Rational, ENotation
 
 TYPE_MAP = {
     'real'       : Decimal,
@@ -382,41 +379,49 @@ Element.logbase = Qualifier('logbase', u'log')
 class MathDOM(object):
     def __init__(self, document):
         augmentElements(document)
-        self.__document = document
+        self._document = document
+
+    @staticmethod
+    def __build_sax_reader(input_type):
+        if input_type == 'mathml':
+            return Reader()
+        else:
+            sax_class = SaxTerm.for_input_type(input_type)
+            return Reader(parser=sax_class())
 
     @classmethod
-    def fromMathmlString(cls, mathml):
-        dom_builder = Reader()
-        return MathDOM( dom_builder.fromString(mathml) )
-
-    @classmethod
-    def fromMathmlFile(cls, input):
-        dom_builder = Reader()
-        return MathDOM( dom_builder.fromStream(input) )
-
-    @classmethod
-    def fromMathmlSax(cls, input, sax_parser):
+    def fromSax(cls, input, sax_parser):
         dom_builder = Reader(parser=sax_parser)
-        return MathDOM( dom_builder.fromString(input) )
+        return cls( dom_builder.fromString(input) )
+
+    @classmethod
+    def fromString(cls, input, input_type='mathml'):
+        dom_builder = cls.__build_sax_reader(input_type)
+        return cls( dom_builder.fromString(input) )
+
+    @classmethod
+    def fromStream(cls, input, input_type='mathml'):
+        dom_builder = cls.__build_sax_reader(input_type)
+        return cls( dom_builder.fromStream(input) )
 
     def __getattr__(self, name):
-        return getattr(self.__document, name)
+        return getattr(self._document, name)
 
     def __repr__(self):
-        return repr(self.__document)
+        return repr(self._document)
 
     def toMathml(self, out=None, indent=False):
         if out is None:
             out = sys.stdout
         if indent:
-            PrettyPrint(self.__document, out)
+            PrettyPrint(self._document, out)
         else:
-            Print(self.__document, out)
+            Print(self._document, out)
 
     # new DOM methods:
 
     def createApply(self, name, *args):
-        create_element = self.__document.createElementNS
+        create_element = self._document.createElementNS
         apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
         function_tag = create_element(MATHML_NAMESPACE_URI, name)
         apply_tag.appendChild(function_tag)
@@ -426,7 +431,7 @@ class MathDOM(object):
         return apply_tag
 
     def createFunction(self, name, *args):
-        create_element = self.__document.createElementNS
+        create_element = self._document.createElementNS
         apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
         function_tag = create_element(MATHML_NAMESPACE_URI, name)
         apply_tag.appendChild(function_tag)
@@ -436,7 +441,7 @@ class MathDOM(object):
         return apply_tag
 
     def createConstant(self, value):
-        create_element = self.__document.createElementNS
+        create_element = self._document.createElementNS
         cn_tag = create_element(MATHML_NAMESPACE_URI, u'cn')
         cn_tag.set_value(value)
         return cn_tag

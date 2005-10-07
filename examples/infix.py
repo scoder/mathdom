@@ -32,11 +32,11 @@ print term
 print
 
 doc = None
-for parser in (BoolExpressionSaxParser, TermSaxParser, TermListSaxParser):
+for term_type in term_parsers.known_types():
     try:
-        doc = MathDOM.fromMathmlSax(term, parser())
+        doc = MathDOM.fromString(term, term_type)
     except ParseException, e:
-        print "Parsing with %s failed: %s" % (parser.__name__, unicode(e).encode('UTF-8'))
+        print "Parsing as %s failed: %s" % (term_type, unicode(e).encode('UTF-8'))
 
 if doc is None:
     print "The term is not parsable."

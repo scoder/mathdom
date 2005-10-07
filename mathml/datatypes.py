@@ -17,7 +17,7 @@ class Complex(complex):
             elif isinstance(real, complex):
                 return cls(real.real, real.imag)
             else:
-                imag = self.__ZERO
+                imag = cls.__ZERO
                 instance = complex.__new__(cls, real)
         elif isinstance(real, (str, unicode)) and isinstance(imag, (str, unicode)):
             instance = complex.__new__(cls, cls.__build_complex_str(real, imag))
@@ -27,8 +27,8 @@ class Complex(complex):
         instance.__tuple = (instance.__real, instance.__imag) = (unicode(real), unicode(imag))
         return instance
 
-    def __complex__(self, value):
-        return self.__class__(value)
+    def __complex__(self):
+        return self
 
     def __iter__(self):
         "Fake iterator to support tuple conversion."
@@ -66,7 +66,6 @@ class Rational(Decimal):
         instance = Decimal.__new__(cls, Decimal(num) / denom)
         instance.__num, instance.__denom = (num, denom)
         instance.__tuple = (unicode(num), unicode(denom))
-        (num, denom)
         return instance
 
     def __iter__(self):

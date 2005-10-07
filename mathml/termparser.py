@@ -12,10 +12,10 @@ Usage examples:
 
 * arithmetic terms:
 
->>> from termparser import parse_term, parse_bool_expression
+>>> from termparser import term_parsers
 >>> from termbuilder import tree_converters
 >>> term = '.1*pi+2*(1+3i)-5.6-6*-1/sin(-45*a.b) + 1'
->>> parsed_ast = parse_term(term)
+>>> parsed_ast = term_parsers['infix_term'].parse(term)
 >>> parsed_ast
 ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', Complex(1+3j))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', (u'const:integer', -1), (u'sin', ('*', (u'const:integer', -45), (u'name', u'a.b')))))), (u'const:integer', 1))
 >>> converter = tree_converters['infix']
@@ -26,7 +26,7 @@ u'0.1 * pi + 2 * (1+3i) - 5.6 - 6 * -1 / sin ( -45 * a.b ) + 1'
 * boolean terms:
 
 >>> bool_term = '%(term)s = 1 or %(term)s > 5 and true' % {'term':term}
->>> parsed_ast = parse_bool_expression(bool_term)
+>>> parsed_ast = term_parsers['infix_bool'].parse(bool_term)
 >>> parsed_ast
 (u'or', ('=', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', Complex(1+3j))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', (u'const:integer', -1), (u'sin', ('*', (u'const:integer', -45), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 1)), (u'and', ('>', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', Complex(1+3j))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', (u'const:integer', -1), (u'sin', ('*', (u'const:integer', -45), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 5)), (u'const:bool', True)))
 >>> converter = tree_converters['postfix']
@@ -35,7 +35,7 @@ u'0.1 pi * 2 (1+3i) * 5.6 6 -1 -45 a.b * sin / * - - 1 + + 1 = 0.1 pi * 2 (1+3i)
 """
 
 __all__ = (
-    'parse_bool_expression', 'parse_term',
+    'term_parsers',
     'ParseException'   # from pyparsing
     )
 
@@ -286,28 +286,78 @@ CompleteTerm.streamline()
 CompleteTermList.streamline()
 
 
+class ConverterRegistry(object):
+    """Objects of this class are used to reference the different converters.
+
+    Subclasses must define an attribute _METHOD_NAME that names the
+    conversion method that converters must provide
+    """
+    def __init__(self):
+        self._converters  = {}
+
+    def register_converter(self, converter_type, converter):
+        "Register a converter for an converter type."
+        if not hasattr(converter, self._METHOD_NAME):
+            raise TypeError, "Converters must have a '%s' method." % self._METHOD_NAME
+        self._converters[converter_type] = converter
+
+    __setitem__ = register_converter
+
+    def unregister_converter(self, converter_type):
+        "Remove the registration for an converter type."
+        del self._converters[converter_type]
+
+    __delitem__ = unregister_converter
+
+    def fortype(self, converter_type):
+        "Return the converter for the given converter type."
+        return self._converters.get(converter_type)
+
+    def __getitem__(self, converter_type):
+        return self._converters[converter_type]
+
+    def known_types(self):
+        "Return the currently registered converter types."
+        return self._converters.keys()
+
+    def convert(self, value, conversion_type):
+        converter = self._converters[conversion_type]
+        convert = getattr(converter, self._METHOD_NAME)
+        return convert(value)
+
+
 # main module functions:
 
-def parse_bool_expression(expression):
-    if not isinstance(expression, unicode):
-        expression = unicode(expression, 'ascii')
-    return CompleteBoolExpression.parseString(expression)[0]
+class TermParsing(ConverterRegistry):
+    _METHOD_NAME = 'parse'
+    def parse(self, term, input_type):
+        "Convert a parse tree into a term of the given input type."
+        converter = self._converters[input_type]
+        return converter.parse(term)
 
-def parse_term(term):
-    if not isinstance(term, unicode):
-        term = unicode(term, 'ascii')
-    return CompleteTerm.parseString(term)[0]
 
-def parse_term_list(term):
-    if not isinstance(term, unicode):
-        term = unicode(term, 'ascii')
-    return CompleteTermList.parseString(term)[0]
+def _build_parser(parser):
+    parseString = parser.parseString
+    class Parser(object):
+        def parse(self, term):
+            if not isinstance(term, unicode):
+                term = unicode(term, 'ascii')
+            return parseString(term)[0]
+    return Parser()
+            
+
+term_parsers = TermParsing()
+
+term_parsers.register_converter('infix_bool',      _build_parser(CompleteBoolExpression))
+term_parsers.register_converter('infix_term',      _build_parser(CompleteTerm))
+term_parsers.register_converter('infix_term_list', _build_parser(CompleteTermList))
 
 
 try:
     import sys
     from optimize import bind_all
     bind_all(sys.modules[__name__])
+    import pyparsing
     bind_all(pyparsing)
     del sys, bind_all
 except:

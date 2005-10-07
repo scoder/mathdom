@@ -39,11 +39,11 @@ print term
 print
 
 doc = None
-for parser in (BoolExpressionSaxParser, TermSaxParser, TermListSaxParser):
+for term_type in term_parsers.known_types():
     try:
-        doc = MathDOM.fromMathmlSax(term, parser())
+        doc = MathDOM.fromString(term, term_type)
     except ParseException, e:
-        print "Parsing with %s failed: %s" % (parser.__name__, unicode(e).encode('UTF-8'))
+        print "Parsing as %s failed: %s" % (term_type, unicode(e).encode('UTF-8'))
 
 if doc is None:
     print "The term is not parsable."
@@ -53,13 +53,16 @@ infix_converter = tree_converters['infix']
 
 def write_infix():
     tree = dom_to_tree(doc)
-    print "SERIALIZED:", infix_converter.build(tree)
+    print "SERIALIZED:"
+    print infix_converter.build(tree)
 
 print "MathML parsing done."
+print
 write_infix()
 
 print
 print "Exchanging '+' and '-' ..."
+print
 for apply_tag in doc.getElementsByTagName(u'apply'):
     operator = apply_tag.operatorname()
     if operator == u'plus':
@@ -68,13 +71,15 @@ for apply_tag in doc.getElementsByTagName(u'apply'):
         apply_tag.set_operator(u'plus')
 write_infix()
 
+print
 if HAS_XPATH:
-    print
     print "Searching for negative numbers using XPath expression '//cn[number() < 0]' ..."
+    print
     for cn_tag in xpath.Evaluate('//cn[number() < 0]', doc.documentElement):
         value = cn_tag.value()
         print "%s [%s]" % (value, type(value))
 else:
     print "XPath not installed. Skipping test."
 
+print
 print 'Done.'
