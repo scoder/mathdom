@@ -1,4 +1,4 @@
-include setup.py README LICENSE
+include setup.py README LICENSE ChangeLog
 recursive-include test *.py
 recursive-include mathml *.py
 recursive-include examples *.py
