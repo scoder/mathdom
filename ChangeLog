@@ -1,0 +1,116 @@
+2005-10-07  scoder  <scoder@users.sourceforge.net>
+
+	* MANIFEST.in, mathml/__init__.py, mathml/datatypes.py, mathml/mathdom.py, mathml/termbuilder.py, mathml/termparser.py, mathml/utils/pyterm.py, mathml/xmlterm.py, test/test.py, examples/dom.py, examples/infix.py, setup.py:
+
+	towards 0.5.0
+	run pychecker
+	rename src directory to mathml
+	major restructuring of input API:
+	- MathDOM.fromString/fromStream/fromSax
+	- term_parsers, tree_converters: conversion registries for input and output to/from ASTs
+	- make SaxTerm the central API class for SAX event generation
+
+	* setup.py: 0.5.0
+
+2005-10-06  scoder  <scoder@users.sourceforge.net>
+
+	* examples/dom.py, examples/infix.py, mathml/mathdom.py, mathml/termbuilder.py, mathml/termparser.py, mathml/xmlterm.py:
+	support parsing term lists
+
+	* mathml/datatypes.py, mathml/mathdom.py, examples/dom.py:
+	more DOM methods, new DOM example
+
+	* setup.py: use mark-up in description
+
+2005-10-05  scoder  <scoder@users.sourceforge.net>
+
+	* mathml/utils/pyterm.py: fix import in pyterm
+
+	* setup.py: new module mathml.utils
+
+	* setup.py: 0.4.0
+
+	* mathml/xmlterm.py, test/test.py:
+	fix conversion of bool constants: DOM to AST
+
+	* test/test.py, examples/infix.py, mathml/mathdom.py, mathml/termbuilder.py, mathml/termparser.py, mathml/utils/__init__.py, mathml/utils/pyterm.py, mathml/xmlterm.py:
+
+	more tests, compare evaluation results against python interpreter results
+	split up termparser into parser/builder modules
+	support lists and intervals, in/notin
+	loads of clean-ups
+	remove old range support from parser
+	new term builder for Python terms
+
+	* html/logo.png: logo as PNG
+
+	* html/MathDOM.html, html/copy.sh, html/logo.dia: added html pages
+
+2005-10-04  scoder  <scoder@users.sourceforge.net>
+
+	* mathml/datatypes.py: new data type implementation
+
+	* setup.py: 0.3.0
+
+	* mathml/mathdom.py, mathml/termparser.py, mathml/xmlterm.py, test/test.py, examples/infix.py:
+	more unit tests, make tests write out tested term
+	fix '-term' parsing, parse e-notation
+	new data type classes for Complex, Rational, ENotation
+	require Decimal type
+	split literal constant construction into multiple methods to simplify overloading
+
+2005-09-30  scoder  <scoder@users.sourceforge.net>
+
+	* test/test.py: unittests
+
+	* setup.py: typo
+
+	* setup.py: 0.2.4
+
+	* README: comment on current status
+
+	* mathml/mathdom.py, mathml/termparser.py, mathml/xmlterm.py:
+	fixes on complex numbers and infix term generation
+	use doctest instead of hand written __main__
+
+	* examples/infix.py, mathml/mathdom.py, mathml/xmlterm.py, setup.py:
+	better type conversion
+	FIX: complex and rational numbers
+	more consistent use of Decimal (instead of float)
+	example shows statistics
+	register with pypi
+
+2005-09-29  scoder  <scoder@users.sourceforge.net>
+
+	* setup.py: 0.2.2
+
+	* README, mathml/xmlterm.py: documentation
+
+	* mathml/mathdom.py, mathml/termparser.py, mathml/xmlterm.py:
+	small fixes, documentation, xmlterm.serialize_dom
+
+	* mathml/termparser.py, examples/infix.py:
+	modified API to use dictionary registration for tree converters
+
+	* MANIFEST.in, README, examples/infix.py, mathml/termparser.py, mathml/xmlterm.py, setup.py:
+	0.2.1, bugfix in term-sax class, add example, some more testing and bugfixing
+
+	* README, mathml/termparser.py, setup.py:
+	new framework for literal converters, 0.2
+
+2005-09-28  scoder  <scoder@users.sourceforge.net>
+
+	* MANIFEST.in: MANIFEST.in
+
+	* README: README
+
+	* mathml/__init__.py, mathml/mathdom.py, mathml/termparser.py, mathml/xmlterm.py, __init__.py, mathdom.py, setup.py, termparser.py, xmlterm.py:
+	moved source to src dir
+
+	* __init__.py, setup.py: distutils
+
+	* mathdom.py, termparser.py, xmlterm.py: initial versions
+
+	* LICENSE:
+	initial import
+
