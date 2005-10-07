@@ -2,8 +2,7 @@ from distutils.core import setup
 setup(
     name='mathdom',
     version='0.5.0',
-#    package_dir={'mathml': 'src'},
-    packages=['mathml', 'mathml.utils'],
+    packages=['mathml'],
 
     description='MathDOM - Content MathML in Python',
     long_description="""MathDOM - Content MathML in Python
