@@ -15,8 +15,9 @@ build_pyterm = PyTermBuilder().build
 
 def pyeval(term_type, *terms):
     parse = term_parsers[term_type].parse
-    pyterms = [ build_pyterm(parse(term)) for term in terms ]
-    return map(eval, pyterms)
+    my_globals, my_locals = globals(), {}
+    pyterms = [ (build_pyterm(parse(term)), my_globals, my_locals) for term in terms ]
+    return starmap(eval, pyterms)
 
 ARITHMETIC_TERMS = {
     '1+4*5+-7' : 1+4*5+-7,
@@ -101,6 +102,12 @@ def build_test_class(test_method, term_type):
 
 
 if __name__ == '__main__':
+    try:
+        import psyco
+        psyco.full()
+    except ImportError:
+        pass
+
     test_classes = starmap(build_test_class,
                            ( (m, t) for m in (ast_test, dom_test) for t in TERMS.iterkeys())
                            )
