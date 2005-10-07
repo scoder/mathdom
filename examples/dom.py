@@ -1,3 +1,9 @@
+try:
+    import psyco
+    psyco.full()
+except ImportError:
+    pass
+
 import sys
 from itertools import imap
 
@@ -8,7 +14,6 @@ except ImportError:
     HAS_XPATH = False
 
 try:
-    raise ImportError
     from mathml.mathdom     import MathDOM
     from mathml.termbuilder import tree_converters
     from mathml.termparser  import *
