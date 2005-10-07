@@ -41,6 +41,17 @@ c) the best you've ever seen
 Every comment is appreciated, as are patches.
 
 
+Version 0.4.0 / 0.5.0:
+----------------------
+
+These versions restructure most of the term input/output API,
+i.e. parsing terms, generating the DOM and serializing to MathML and
+literal terms. The usage should become much simpler and much more
+consistent this way. However, it also means that code using the old
+API will break. Please look at the examples to see how the new API
+works. I hope you will like it.
+
+
 The files:
 ----------
 
@@ -57,7 +68,7 @@ examples/infix.py - example program: read a term, write out MathML,
                     everything works.
 
 
-* The actual package source is in "src/":
+* The actual package source is in "mathml/":
 
 src/mathdom.py    - the DOM implemention
 
