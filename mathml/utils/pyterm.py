@@ -1,8 +1,8 @@
 try:
-    from mathml.termbuilder import InfixTermBuilder
+    from mathml.termbuilder import tree_converters, InfixTermBuilder
 except ImportError:
     # for testing
-    from termbuilder import InfixTermBuilder
+    from termbuilder import tree_converters, InfixTermBuilder
 
 class PyTermBuilder(InfixTermBuilder):
     _INTERVAL_NOTATION = {
@@ -18,8 +18,8 @@ class PyTermBuilder(InfixTermBuilder):
     map_operator = _OPERATOR_MAP.get
 
     _NAME_MAP = {
-        u'e'     : u'math.E',
-        u'pi'    : u'math.PI',
+        u'e'     : u'math.e',
+        u'pi'    : u'math.pi',
         u'true'  : u'True',
         u'false' : u'False'
         }
@@ -42,6 +42,9 @@ class PyTermBuilder(InfixTermBuilder):
     def _handle_interval(self, operator, operands, affin):
         assert operator[:9] == u'interval:'
         return [ self._INTERVAL_NOTATION[ operator[9:] ] % tuple(operands) ]
+
+
+tree_converters.register_converter('python',   PyTermBuilder())
 
 
 ## May add a PyTermParser in future releases ...
