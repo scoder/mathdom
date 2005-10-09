@@ -13,19 +13,15 @@ try:
 except ImportError:
     HAS_XPATH = False
 
-try:
-    from mathml.mathdom     import MathDOM
-    from mathml.termbuilder import tree_converters
-    from mathml.termparser  import *
-    from mathml.xmlterm     import *
-except ImportError:
-    # Maybe we are still before installation?
-    sys.path.append('..')
 
-    from mathdom     import MathDOM
-    from termbuilder import tree_converters
-    from termparser  import *
-    from xmlterm     import *
+# Maybe we are still before installation?
+sys.path.append('..')
+
+from mathml.mathdom     import MathDOM
+from mathml.termbuilder import tree_converters
+from mathml.termparser  import *
+from mathml.xmlterm     import *
+
 
 infix_converter = tree_converters['infix']
 
