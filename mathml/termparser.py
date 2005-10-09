@@ -63,7 +63,7 @@ def _build_expression_tree(match, pos, tokens):
     else:
         return [ (tokens[1],) + tuple(tokens[::2]) ]
 
-class BaseParser(object):
+class TermTokenizer(object):
     """Defines identifiers, attributes and basic data types:
     string, int, float, bool.
     """
@@ -86,15 +86,6 @@ class BaseParser(object):
         else:
             value = Complex(Decimal(t[0]), Decimal(t[1]))
         return [ (u'const:complex', value) ]
-
-    def __parse_int_list(s,p,t):
-        return [ (u'list:int',)    + tuple(t) ]
-    def __parse_float_list(s,p,t):
-        return [ (u'list:float',)  + tuple(t) ]
-    def __parse_string_list(s,p,t):
-        return [ (u'list:str',)    + tuple(t) ]
-    def __parse_bool_list(s,p,t):
-        return [ (u'list:bool',)   + tuple(t) ]
 
     # atoms: int, float, string
     p_sign = oneOf('+ -')
@@ -144,22 +135,6 @@ class BaseParser(object):
     p_attribute.setName('attribute')
     p_attribute.setParseAction(__parse_attribute)
 
-    # int list = (3,6,43,554)
-    _p_int_or_name = p_int | p_attribute
-    p_int_list = delimitedList(_p_int_or_name)
-    p_int_list.setParseAction(__parse_int_list)
-
-    # typed list = (strings) | (ints) | (floats) | ...
-    p_string_list = delimitedList(p_string | p_attribute)
-    p_string_list.setParseAction(__parse_string_list)
-    p_bool_list   = delimitedList(p_bool | p_attribute)
-    p_bool_list.setParseAction(__parse_bool_list)
-    p_float_list  = delimitedList(p_float | p_attribute)
-    p_float_list.setParseAction(__parse_float_list)
-
-    p_any_list = p_float_list | p_int_list | p_string_list | p_bool_list
-    p_typed_tuple = Suppress('(') + p_any_list + Suppress(')')
-
 
 class InfixTermParser(object):
     "Defines arithmetic terms."
@@ -173,8 +148,6 @@ class InfixTermParser(object):
 
     operator_order = '^ % / * - +'
 
-    def __parse_list(s,p,t):
-        return [ (u'list',)  + tuple(t) ]
     def __parse_interval(s,p,t):
         return [ (u'interval:%s' % InfixTermParser.interval_closure[(t[0], t[-1])],) + tuple(t[1:-1]) ]
     def __parse_function(s,p,t):
@@ -201,7 +174,7 @@ class InfixTermParser(object):
     p_arithmetic_exp = _p_exp
 
     # function = identifier(exp,...)
-    p_function = BaseParser.p_identifier + Suppress('(') + delimitedList(p_arithmetic_exp) + Suppress(')')
+    p_function = TermTokenizer.p_identifier + Suppress('(') + delimitedList(p_arithmetic_exp) + Suppress(')')
     p_function.setParseAction(__parse_function)
 
     _p_bool_expression = Forward()
@@ -216,15 +189,46 @@ class InfixTermParser(object):
     p_case.setParseAction(__parse_case)
 
     # numeric values = attribute | number | expression
-    _p_num_atom <<= p_case | ( Suppress('(') + p_arithmetic_exp + Suppress(')') ) | BaseParser.p_num | p_function | BaseParser.p_attribute
+    _p_num_atom <<= p_case | ( Suppress('(') + p_arithmetic_exp + Suppress(')') ) | TermTokenizer.p_num | p_function | TermTokenizer.p_attribute
 
     p_arithmetic_interval = oneOf('( [') + p_arithmetic_exp + Suppress(',') + p_arithmetic_exp + oneOf(') ]')
     p_arithmetic_interval.setParseAction(__parse_interval)
 
+    # --- only lists from this point ---
+
+    def __parse_list(s,p,t):
+        return [ (u'list',)  + tuple(t) ]
+
     p_arithmetic_list = delimitedList(p_arithmetic_exp)
     p_arithmetic_list.setParseAction(__parse_list)
 
+    # currently unused:
+
     p_arithmetic_tuple = Suppress('(') + p_arithmetic_list + Suppress(')')
+
+    def __parse_int_list(s,p,t):
+        return [ (u'list:int',)    + tuple(t) ]
+    def __parse_float_list(s,p,t):
+        return [ (u'list:float',)  + tuple(t) ]
+    def __parse_string_list(s,p,t):
+        return [ (u'list:str',)    + tuple(t) ]
+    def __parse_bool_list(s,p,t):
+        return [ (u'list:bool',)   + tuple(t) ]
+
+    # int list = (3,6,43,554)
+    p_int_list = delimitedList(TermTokenizer.p_int | TermTokenizer.p_attribute)
+    p_int_list.setParseAction(__parse_int_list)
+
+    # typed list = (strings) | (ints) | (floats) | ...
+    p_string_list = delimitedList(TermTokenizer.p_string | TermTokenizer.p_attribute)
+    p_string_list.setParseAction(__parse_string_list)
+    p_bool_list   = delimitedList(TermTokenizer.p_bool | TermTokenizer.p_attribute)
+    p_bool_list.setParseAction(__parse_bool_list)
+    p_float_list  = delimitedList(TermTokenizer.p_float | TermTokenizer.p_attribute)
+    p_float_list.setParseAction(__parse_float_list)
+
+    p_any_list = p_float_list | p_int_list | p_string_list | p_bool_list
+
 
 
 class InfixBoolExpressionParser(object):
@@ -244,11 +248,11 @@ class InfixBoolExpressionParser(object):
     p_bool_or  = CaselessLiteral(u'or')
     p_bool_not = CaselessLiteral(u'not')
 
-    p_bool_cmp  = BaseParser.p_bool + OneOrMore( p_bool_operator + BaseParser.p_attribute )
-    p_bool_cmp |= (BaseParser.p_bool | BaseParser.p_attribute) + Optional( p_bool_operator + BaseParser.p_bool )
+    p_bool_cmp  = TermTokenizer.p_bool + OneOrMore( p_bool_operator + TermTokenizer.p_attribute )
+    p_bool_cmp |= (TermTokenizer.p_bool | TermTokenizer.p_attribute) + Optional( p_bool_operator + TermTokenizer.p_bool )
 
-    p_str_cmp   = BaseParser.p_attribute + OneOrMore( p_cmp_operator + BaseParser.p_string )
-    p_str_cmp  |= BaseParser.p_string    + OneOrMore( p_cmp_operator + BaseParser.p_attribute )
+    p_str_cmp   = TermTokenizer.p_attribute + OneOrMore( p_cmp_operator + TermTokenizer.p_string )
+    p_str_cmp  |= TermTokenizer.p_string    + OneOrMore( p_cmp_operator + TermTokenizer.p_attribute )
 
     p_list_cmp = InfixTermParser.p_arithmetic_exp + p_cmp_in + InfixTermParser.p_arithmetic_interval # p_arithmetic_tuple
 

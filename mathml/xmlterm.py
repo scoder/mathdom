@@ -117,7 +117,7 @@ _FUNCTION_MAP = {
 
 # OUTPUT:
 
-def serialize_dom(domdocument, output_format=None, converter=None):
+def serialize_dom(doc_or_element, output_format=None, converter=None):
     """Serialize a MathDOM document into a term.
 
     You can specify either a converter or an output format. If neither
@@ -127,11 +127,11 @@ def serialize_dom(domdocument, output_format=None, converter=None):
         output_format = 'infix'
     if converter is None:
         converter = tree_converters.fortype(output_format)
-    tree = dom_to_tree(domdocument)
+    tree = dom_to_tree(doc_or_element)
     return converter.build(tree)
 
 
-def dom_to_tree(doc):
+def dom_to_tree(doc_or_element):
     "Convert DOM document into AST."
     map_operator = dict((v,n) for (n,v) in _FUNCTION_MAP.iteritems()).get
     map_constant = dict((v,n) for (n,v) in _ELEMENT_CONSTANT_MAP.iteritems()).get
@@ -199,7 +199,12 @@ def dom_to_tree(doc):
         else:
             raise NotImplementedError, u"%s elements are not supported" % mtype
 
-    tree = _recursive_dom_to_tree(doc.documentElement)
+    try:
+        root = doc_or_element.documentElement
+    except AttributeError:
+        root = doc_or_element
+
+    tree = _recursive_dom_to_tree(root)
     if not isinstance(tree, list):
         return [ tree ]
     else:

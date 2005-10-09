@@ -12,7 +12,7 @@ from xml.dom.ext.reader.Sax2 import Reader
 
 
 from mathml           import MATHML_NAMESPACE_URI
-from mathml.xmlterm   import SaxTerm
+from mathml.xmlterm   import SaxTerm, dom_to_tree, serialize_dom
 from mathml.datatypes import Decimal, Complex, Rational, ENotation
 
 TYPE_MAP = {
@@ -181,6 +181,14 @@ class MathElement(Element):
             raise TypeError, "You must supply an operator first."
         self.childNodes.append(operand)
 
+    @method_elements(u"apply ci cn")
+    def to_tree(self):
+        return dom_to_tree(self)
+
+    @method_elements(u"apply ci cn")
+    def serialize(self, *args, **kwargs):
+        return serialize_dom(self, *args, **kwargs)
+
     @method_elements(defined_in="UNARY_FUNCTIONS")
     def operand(self):
         return self.firstChild
@@ -298,25 +306,6 @@ class MathValue(Element):
         return u"<%s>%r</%s>" % (name, self.firstChild, name)
 
 
-def augmentElements(node):
-    "Weave methods into DOM Element objects."
-    if node.nodeType == node.ELEMENT_NODE:
-        element_methods = METHODS_BY_ELEMENT_NAME.get(node.localName, ())
-        common_methods  = METHODS_BY_ELEMENT_NAME.get(None, ())
-        node_class = node.__class__
-        for method_name, method in chain(element_methods, common_methods):
-            new_method = new.instancemethod(method, node, node_class)
-            setattr(node, method_name, new_method)
-
-    for child in tuple(node.childNodes):
-        if child.nodeType == Node.TEXT_NODE:
-            if not child.data.strip():
-                node.removeChild(child)
-                continue
-        else:
-            augmentElements(child)
-
-
 # add qualifiers as attributes to standard DOM classes
 DEFAULT_DICT = {}
 def setupDefaults():
@@ -378,8 +367,26 @@ Element.logbase = Qualifier('logbase', u'log')
 
 class MathDOM(object):
     def __init__(self, document):
-        augmentElements(document)
+        self.__augmentElements(document)
         self._document = document
+
+    def __augmentElements(self, node):
+        "Weave methods into DOM Element objects."
+        if node.nodeType == node.ELEMENT_NODE:
+            element_methods = METHODS_BY_ELEMENT_NAME.get(node.localName, ())
+            common_methods  = METHODS_BY_ELEMENT_NAME.get(None, ())
+            node_class = node.__class__
+            for method_name, method in chain(element_methods, common_methods):
+                new_method = new.instancemethod(method, node, node_class)
+                setattr(node, method_name, new_method)
+
+        for child in tuple(node.childNodes):
+            if child.nodeType == Node.TEXT_NODE:
+                if not child.data.strip():
+                    node.removeChild(child)
+                    continue
+            else:
+                self.__augmentElements(child)
 
     @staticmethod
     def __build_sax_reader(input_type):
