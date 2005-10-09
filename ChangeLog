@@ -1,3 +1,23 @@
+2005-10-09  scoder  <scoder@toaster>
+
+	* dom.py, infix.py: partial serialization
+
+2005-10-07  scoder  <scoder@toaster>
+
+	* infix.py: use psyco if available
+
+	* dom.py: quick fix for dom example
+
+	* dom.py, infix.py:
+
+	towards 0.5.0
+	run pychecker
+	rename src directory to mathml
+	major restructuring of input API:
+	* MathDOM.fromString/fromStream/fromSax
+	* term_parsers, tree_converters: conversion registries for input and output to/from ASTs
+	* make SaxTerm the central API class for SAX event generation
+
 2005-10-07  scoder  <scoder@users.sourceforge.net>
 
 	* MANIFEST.in, mathml/__init__.py, mathml/datatypes.py, mathml/mathdom.py, mathml/termbuilder.py, mathml/termparser.py, mathml/utils/pyterm.py, mathml/xmlterm.py, test/test.py, examples/dom.py, examples/infix.py, setup.py:
