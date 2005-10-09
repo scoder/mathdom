@@ -7,19 +7,14 @@ except ImportError:
 import sys
 from itertools import imap
 
-try:
-    from mathml.mathdom     import MathDOM
-    from mathml.termbuilder import tree_converters
-    from mathml.termparser  import *
-    from mathml.xmlterm     import *
-except ImportError:
-    # Maybe we are still before installation?
-    sys.path.append('..')
+# Maybe we are still before installation?
+sys.path.append('..')
 
-    from mathdom     import MathDOM
-    from termbuilder import tree_converters
-    from termparser  import *
-    from xmlterm     import *
+from mathml.mathdom     import MathDOM
+from mathml.termbuilder import tree_converters
+from mathml.termparser  import *
+from mathml.xmlterm     import *
+
 
 def handle_term(term):
     print "ORIGINAL:"
@@ -55,13 +50,21 @@ def handle_term(term):
     print tree
     print
 
-    for output_type in ('infix', 'prefix', 'postfix'):
-        try:
-            converter = tree_converters[output_type]
-            print "%s:" % output_type.upper().ljust(8),  converter.build(tree)
-            print
-        except KeyError:
-            print "unknown output type: '%s'" % output_type
+    for output_type in tree_converters.known_types():
+        converter = tree_converters[output_type]
+        print "%s:" % output_type.upper().ljust(8), converter.build(tree)
+        print
+
+    if 'python' not in tree_converters.known_types():
+        print "Importing pyterm converter ..."
+        from mathml.utils import pyterm
+
+        print "Building python term ..."
+        print
+        converter = tree_converters['python']
+        print "PYTHON  :" , converter.build(tree)
+        print
+
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == '-':
