@@ -26,19 +26,12 @@ If you want to test it, run 'examples/infix.py'.
 Current status:
 ---------------
 
-* Short form:
-This is alpha software. This means: it will spit into your coffee and
-morph into a beast right in the second you take your eyes off it. You
-have been warned.
+This is currently beta software. The API is partially stabilizing, but
+may otherwise still be subject to changes. The output and DOM APIs
+will likely evolve without major compatibility breaks. The
+input/parser API is not stable yet.
 
-* Long form:
-There are definitely bugs in the implementation and the APIs are not
-stable. You are very welcome to comment on them if you think they are
-a) plain wrong
-b) sort of OK, but could be better
-c) the best you've ever seen
-
-Every comment is appreciated, as are patches.
+Every comment or suggestion is appreciated, as are patches.
 
 
 Version 0.4.0 / 0.5.0:
