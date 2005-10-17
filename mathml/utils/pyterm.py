@@ -37,6 +37,11 @@ class PyTermBuilder(InfixTermBuilder):
 
     def _handle_const_complex(self, operator, operands, affin):
         value = operands[0]
+        if value.imag == 0:
+            return value.real_str
+        real_str = value.real_str
+        if real_str == "0":
+            real_str = ''
         return [ u'(%s%s%sj)' % (value.real_str, (value.imag >= 0) and '+' or '', value.imag_str) ]
 
     def _handle_interval(self, operator, operands, affin):
