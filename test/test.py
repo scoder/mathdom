@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, '..')
 
 import unittest
-from itertools import starmap
+from itertools import chain, starmap
 
 from mathml.termparser   import term_parsers
 from mathml.termbuilder  import tree_converters
@@ -44,6 +44,8 @@ ARITHMETIC_TERMS = {
 BOOLEAN_TERMS = {
     'true or false'  : True,
     'true and false' : False,
+    'not true and false' : False,
+    'true and not false' : True,
     '1+1 < 2+2'  : True,
     '1 in (3,4)' : False,
     '3 in [3,4)' : True,
@@ -59,19 +61,22 @@ TERMS = {
 
 def ast_test(term, term_type, _):
     parser = term_parsers[term_type]
-    converter = tree_converters['infix']
+    infix_converter  = tree_converters['infix']
+    python_converter = tree_converters['python']
 
     ast = parser.parse(term)
-    infix = converter.build(ast)
+    infix  = infix_converter.build(ast)
+    pyterm = python_converter.build(ast)
 
-    return pyeval(term_type, term, infix)
+    return chain(pyeval(term_type, term, infix), [eval(pyterm)])
 
 
 def dom_test(term, term_type, mathdom):
     doc = mathdom.fromString(term, term_type)
-    infix = serialize_dom(doc, 'infix')
+    infix  = serialize_dom(doc, 'infix')
+    pyterm = serialize_dom(doc, 'python')
 
-    return pyeval(term_type, term, infix)
+    return chain(pyeval(term_type, term, infix), [eval(pyterm)])
 
 
 ###
@@ -82,12 +87,12 @@ def build_test_class(test_method, term_type, which_MathDOM):
 
     def build_test_method(term, result):
         def test(self):
-            results = test_method(term, term_type, which_MathDOM)
+            result_iter = test_method(term, term_type, which_MathDOM)
             #print result
             if result is None:
-                self.assertEqual(*results)
+                self.assertEqual(*tuple(result_iter)[:2])
             else:
-                for r in results:
+                for r in result_iter:
                     self.assertEqual(r, result)
         test.__doc__ = "%-8s - %s: %s" % (impl_name, class_name.replace('_', ' '), term)
         return test
