@@ -29,6 +29,20 @@ top of libxml2 [5]. Please apply the patch that comes with MathDOM if
 you want to use lxml. The patch applies to version 0.7 of lxml.
 
 
+A quick example:
+----------------
+
+>>> from mathml.lmathdom import MathDOM                     # use lxml implementation
+>>> doc = MathDOM.fromString("+2^4+4*5/6", "infix_term")    # parse infix term
+>>> for apply_tag in doc.xpath(u'//math:apply[math:plus]'): # replace '+' with '-'
+...     apply_tag.set_operator(u'minus')
+>>> from mathml.utils import pyterm                         # register Python term builder
+>>> doc.serialize("python")                                 # serialize to Python term
+u'2 ** 4 - 4 * 5 / 6'
+
+Simple, isn't it ?
+
+
 Current status:
 ---------------
 
