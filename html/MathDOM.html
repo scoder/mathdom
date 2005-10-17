@@ -29,7 +29,8 @@ import mathematical terms as a <a
 <a href="http://www.w3.org/TR/MathML2/">MathML</a> DOM. It currently
 parses
 MathML
-and literal infix terms into a DOM document and writes out MathML and
+and literal infix terms into a DOM or <a
+href="http://codespeak.net/lxml/">lxml</a> document and writes out MathML and
 literal
 infix/prefix/postfix terms. The DOM elements are enhanced by domain
 specific
@@ -38,7 +39,7 @@ make using the DOM a little easier.</p>
 <p>You can call it the shortest way between different term
 representations and a Content MathML DOM. Ever noticed the annoying
 differences between terms in different programming languages? Build
-your application around the DOM and stop caring about the term
+your application around the DOM or lxml and stop caring about the term
 representation that users prefer or that your machine can execute. If
 you need a different representation, add a converter, but don't change
 the model. Literal terms are connected through an intermediate AST step
