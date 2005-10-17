@@ -42,7 +42,7 @@ class PyTermBuilder(InfixTermBuilder):
         real_str = value.real_str
         if real_str == "0":
             real_str = ''
-        return [ u'(%s%s%sj)' % (value.real_str, (value.imag >= 0) and '+' or '', value.imag_str) ]
+        return [ u'(%s%s%sj)' % (real_str, (value.imag >= 0) and '+' or '', value.imag_str) ]
 
     def _handle_interval(self, operator, operands, affin):
         assert operator[:9] == u'interval:'
