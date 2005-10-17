@@ -1,5 +1,33 @@
 2005-10-17  scoder  <scoder@toaster>
 
+	* README, html/MathDOM.html, html/codestyle.css, html/copy.sh:
+	documentation updates
+
+	* mathml/utils/pyterm.py: fix complex output
+
+	* setup.py: start work on 0.5.3
+
+	* examples/ldom.py: make XPath expression more selective
+
+	* README: add example in README
+
+	* setup.py: adapt description to 0.5.2
+
+	* test/test.py: test python DOM serializer
+
+	* mathml/lmathdom.py, mathml/mathdom.py, mathml/xmlterm.py, test/test.py, README, examples/dom.py, examples/ldom.py, lxml+custom_classes+saxify.patch, setup.py:
+	0.5.2
+	added implementation based on lxml + patch for lxml
+	adapted other parts to more generic API
+
+	* MANIFEST.in: add lxml patch
+
+2005-10-17  scoder  <scoder@toaster>
+
+	* pyterm.py: fix complex output
+
+2005-10-17  scoder  <scoder@toaster>
+
 	* mathml/lmathdom.py, mathml/mathdom.py, mathml/xmlterm.py, test/test.py, README, examples/dom.py, examples/ldom.py, lxml+custom_classes+saxify.patch, setup.py:
 	0.5.2
 	added implementation based on lxml + patch for lxml
