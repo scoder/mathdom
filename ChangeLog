@@ -1,3 +1,30 @@
+2005-10-17  scoder  <scoder@toaster>
+
+	* mathml/lmathdom.py, mathml/mathdom.py, mathml/xmlterm.py, test/test.py, README, examples/dom.py, examples/ldom.py, lxml+custom_classes+saxify.patch, setup.py:
+	0.5.2
+	added implementation based on lxml + patch for lxml
+	adapted other parts to more generic API
+
+	* MANIFEST.in: add lxml patch
+
+2005-10-10  scoder  <scoder@toaster>
+
+	* README: alpha->beta
+
+2005-10-09  scoder  <scoder@toaster>
+
+	* examples/dom.py: fix imports
+
+	* examples/infix.py: fix imports, test python export
+
+	* mathml/utils/pyterm.py:
+	auto-registration of pyterm, fix names of math medule constants
+
+	* ChangeLog, setup.py: 0.5.1
+
+	* examples/dom.py, examples/infix.py, mathml/mathdom.py, mathml/termparser.py, mathml/xmlterm.py:
+	partial serialization
+
 2005-10-09  scoder  <scoder@toaster>
 
 	* dom.py, infix.py: partial serialization
