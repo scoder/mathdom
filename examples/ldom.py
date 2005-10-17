@@ -51,7 +51,7 @@ def handle_term(term):
     print
     print "Exchanging '+' and '-' ..."
     print
-    for apply_tag in doc.xpath(u'//math:apply'):
+    for apply_tag in doc.xpath(u'//math:apply[math:plus or math:minus and count(math:*) > 2]'):
         operator = apply_tag.operatorname()
         if operator == u'plus':
             apply_tag.set_operator(u'minus')
