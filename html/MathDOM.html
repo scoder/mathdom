@@ -5,6 +5,7 @@
  http-equiv="content-type">
   <title>MathDOM - Content MathML in Python</title>
   <meta content="Stefan Behnel" name="author">
+  <link rel="stylesheet" type="text/css" href="codestyle.css">
 </head>
 <body>
 <img alt="MathDOM logo" src="logo.png"
@@ -47,7 +48,76 @@ your application around the DOM or lxml and stop caring about the term
 representation that users prefer or that your machine can execute. If
 you need a different representation, add a converter, but don't change
 the model. Literal terms are connected through an intermediate AST step
-that makes writing converters for C/Fortran/SQL/yourfavorite easier.</p>
+that makes writing converters for C/Fortran/SQL/yourfavourite easier.</p>
+<h2>A quick example</h2>
+<pre><span class="code_default"><span class="p_operator">&gt;&gt;&gt;</span><span
+ class="p_default">&nbsp;</span><span class="p_word">from</span><span
+ class="p_default">&nbsp;</span><span class="p_identifier">mathml</span><span
+ class="p_operator">.</span><span class="p_identifier">lmathdom</span><span
+ class="p_default">&nbsp;</span><span class="p_word">import</span><span
+ class="p_default">&nbsp;</span><span class="p_identifier">MathDOM</span><span
+ class="p_default">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span
+ class="p_commentline">#&nbsp;use&nbsp;lxml&nbsp;implementation</span><span
+ class="p_default"><br></span><span class="p_operator">&gt;&gt;&gt;</span><span
+ class="p_default">&nbsp;</span><span class="p_identifier">doc</span><span
+ class="p_default">&nbsp;</span><span class="p_operator">=</span><span
+ class="p_default">&nbsp;</span><span class="p_identifier">MathDOM</span><span
+ class="p_operator">.</span><span class="p_identifier">fromString</span><span
+ class="p_operator">(</span><span class="p_string">"+2^x+4*-5i/6"</span><span
+ class="p_operator">,</span><span class="p_default">&nbsp;</span><span
+ class="p_string">"infix_term"</span><span class="p_operator">)</span><span
+ class="p_default">&nbsp; </span><span class="p_commentline">#&nbsp;parse&nbsp;infix&nbsp;term</span><span
+ class="p_default"><br></span><span class="p_operator">&gt;&gt;&gt;</span><span
+ class="p_default">&nbsp;</span><span class="p_word">for</span><span
+ class="p_default">&nbsp;</span><span class="p_identifier">apply_tag</span><span
+ class="p_default">&nbsp;</span><span class="p_word">in</span><span
+ class="p_default">&nbsp;</span><span class="p_identifier">doc</span><span
+ class="p_operator">.</span><span class="p_identifier">xpath</span><span
+ class="p_operator">(</span><span class="p_character">u'//math:apply[math:plus]'</span><span
+ class="p_operator">):</span><span class="p_default">&nbsp;</span><span
+ class="p_commentline">#&nbsp;replace&nbsp;'+'&nbsp;with&nbsp;'-'</span><span
+ class="p_default"><br></span><span class="p_operator">...</span><span
+ class="p_default">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span
+ class="p_identifier">apply_tag</span><span class="p_operator">.</span><span
+ class="p_identifier">set_operator</span><span class="p_operator">(</span><span
+ class="p_character">u'minus'</span><span class="p_operator">)</span><span
+ class="p_default"><br></span><span class="p_operator">&gt;&gt;&gt;</span><span
+ class="p_default">&nbsp;</span><span class="p_operator">[</span><span
+ class="p_default">&nbsp;</span><span class="p_identifier">n</span><span
+ class="p_operator">.</span><span class="p_identifier">value</span><span
+ class="p_operator">()</span><span class="p_default">&nbsp;</span><span
+ class="p_word">for</span><span class="p_default">&nbsp;</span><span
+ class="p_identifier">n</span><span class="p_default">&nbsp;</span><span
+ class="p_word">in</span><span class="p_default">&nbsp;</span><span
+ class="p_identifier">doc</span><span class="p_operator">.</span><span
+ class="p_identifier">xpath</span><span class="p_operator">(</span><span
+ class="p_character">u'//math:cn'</span><span class="p_operator">)</span><span
+ class="p_default">&nbsp;</span><span class="p_operator">]</span><span
+ class="p_default">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span
+ class="p_commentline">#&nbsp;find&nbsp;numbers</span><span
+ class="p_default"><br></span><span class="p_operator">[</span><span
+ class="p_number">2</span><span class="p_operator">,</span><span
+ class="p_default">&nbsp;</span><span class="p_number">4</span><span
+ class="p_operator">,</span><span class="p_default"> </span><span
+ class="p_number">Complex(0-5j)</span><span class="p_operator">,</span><span
+ class="p_default">&nbsp;</span><span class="p_number">6</span><span
+ class="p_operator">]</span><span class="p_default"><br></span><span
+ class="p_operator">&gt;&gt;&gt;</span><span class="p_default">&nbsp;</span><span
+ class="p_word">from</span><span class="p_default">&nbsp;</span><span
+ class="p_identifier">mathml</span><span class="p_operator">.</span><span
+ class="p_identifier">utils</span><span class="p_default">&nbsp;</span><span
+ class="p_word">import</span><span class="p_default">&nbsp;</span><span
+ class="p_identifier">pyterm</span><span class="p_default">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span
+ class="p_commentline">#&nbsp;register&nbsp;Python&nbsp;term&nbsp;builder</span><span
+ class="p_default"><br></span><span class="p_operator">&gt;&gt;&gt;</span><span
+ class="p_default">&nbsp;</span><span class="p_identifier">doc</span><span
+ class="p_operator">.</span><span class="p_identifier">serialize</span><span
+ class="p_operator">(</span><span class="p_string">"python"</span><span
+ class="p_operator">)</span><span class="p_default">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span
+ class="p_commentline">#&nbsp;serialize&nbsp;to&nbsp;Python&nbsp;term</span><span
+ class="p_default"><br></span><span class="p_character">u'2&nbsp;**&nbsp;x&nbsp;-&nbsp;4&nbsp;* (-5j) /&nbsp;6'</span><span
+ class="p_default"></span></span></pre>
+Simple, isn't it ?
 <h2>Why PyXML <span style="font-style: italic;">and</span> lxml?</h2>
 While basic XML support is part of the Python distribution, PyXML
 extends it to a mostly complete DOM Level-2 compatible API written in

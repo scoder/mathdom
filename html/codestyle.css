@@ -1,0 +1,79 @@
+.code_default
+{
+    font-family: monospace;
+    font-size: 10pt;
+}
+
+.p_character
+{
+	color: olive;
+}
+
+.p_classname
+{
+	color: blue;
+	font-weight: bold;
+}
+
+.p_commentblock
+{
+	color: gray;
+	font-style: italic;
+}
+
+.p_commentline
+{
+	color: green;
+	font-style: italic;
+}
+
+.p_default
+{
+}
+
+.p_defname
+{
+    color: #009999;
+	font-weight: bold;
+}
+
+.p_identifier
+{
+	color: black;
+}
+
+.p_number
+{
+    color: #009999;
+}
+
+.p_operator
+{
+	color: black;
+}
+
+.p_string
+{
+	color: olive;
+}
+
+.p_stringeol
+{
+	color: olive;
+}
+
+.p_triple
+{
+	color: olive;
+}
+
+.p_tripledouble
+{
+	color: olive;
+}
+
+.p_word
+{
+	color: navy;
+	font-weight: bold;
+}
