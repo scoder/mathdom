@@ -36,8 +36,8 @@ A quick example:
 >>> doc = MathDOM.fromString("+2^x+4*-5i/6", "infix_term")   # parse infix term
 >>> for apply_tag in doc.xpath(u'//math:apply[math:plus]'): # replace '+' with '-'
 ...     apply_tag.set_operator(u'minus')
->>> [ n.value() for n in doc.xpath(u'//math:cn') ]          # find numbers
-[2, 4, Complex(0-5j), 6]
+>>> [ n.value() for n in doc.xpath(u'//math:cn[@type="integer"]') ] # find integers
+[2, 4, 6]
 >>> from mathml.utils import pyterm                         # register Python term builder
 >>> doc.serialize("python")                                 # serialize to Python term
 u'2 ** x - 4 * (-5j) / 6'
@@ -53,7 +53,9 @@ may otherwise still be subject to changes. The output and DOM APIs
 will likely evolve without major compatibility breaks. The
 input/parser API is not stable yet.
 
-Every comment or suggestion is appreciated, as are patches.
+Please keep in mind that the best way to stabilize an API is to have
+users use it and give feed back. Every comment or suggestion is
+appreciated, as are patches.
 
 
 Version 0.4.0 / 0.5.0:
