@@ -5,6 +5,13 @@ __all__ = [ 'MathDOM' ]
 import sys, new
 from itertools import chain
 
+try:
+    from xml import xpath
+    from xml.xpath.Context import Context
+    HAS_XPATH=True
+except ImportError:
+    HAS_XPATH=False
+
 from xml.dom import Node, getDOMImplementation
 from xml.dom.Element import Element
 from xml.dom.ext import Print, PrettyPrint
@@ -14,6 +21,8 @@ from xml.dom.ext.reader.Sax2 import Reader
 from mathml           import MATHML_NAMESPACE_URI
 from mathml.xmlterm   import SaxTerm, dom_to_tree, serialize_dom
 from mathml.datatypes import Decimal, Complex, Rational, ENotation
+
+_MATH_NS_DICT = {u'math':MATHML_NAMESPACE_URI}
 
 TYPE_MAP = {
     'real'       : Decimal,
@@ -114,6 +123,17 @@ def register_method(function):
 
 class MathElement(Element):
     "Fake class containing methods for different MathML Element objects."
+    if HAS_XPATH:
+        @register_method
+        def xpath(self, expression, other_namespaces=None):
+            if other_namespaces:
+                other_namespaces = other_namespaces.copy()
+                other_namespaces.update(_MATH_NS_DICT)
+            else:
+                other_namespaces = _MATH_NS_DICT
+            context = Context(self, processorNss=other_namespaces)
+            return xpath.Evaluate(expression, context=context)
+
     @register_method
     def mathtype(self):
         return self.localName
@@ -367,6 +387,7 @@ Element.logbase = Qualifier('logbase', u'log')
 
 class MathDOM(object):
     def __init__(self, document):
+        self.__common_methods = METHODS_BY_ELEMENT_NAME.get(None, ())
         self.__augmentElements(document)
         self._document = document
 
@@ -374,14 +395,16 @@ class MathDOM(object):
         "Weave methods into DOM Element objects."
         if node.nodeType == node.ELEMENT_NODE:
             element_methods = METHODS_BY_ELEMENT_NAME.get(node.localName, ())
-            common_methods  = METHODS_BY_ELEMENT_NAME.get(None, ())
             node_class = node.__class__
-            for method_name, method in chain(element_methods, common_methods):
-                new_method = new.instancemethod(method, node, node_class)
-                setattr(node, method_name, new_method)
+            build_instancemethod = new.instancemethod
+            node.__dict__.update(
+                (method_name, build_instancemethod(method, node, node_class))
+                for method_name, method in chain(self.__common_methods, element_methods)
+                )
 
+        text_node = Node.TEXT_NODE
         for child in tuple(node.childNodes):
-            if child.nodeType == Node.TEXT_NODE:
+            if child.nodeType == text_node:
                 if not child.data.strip():
                     node.removeChild(child)
                     continue
@@ -416,6 +439,22 @@ class MathDOM(object):
 
     def __repr__(self):
         return repr(self._document)
+
+    def to_tree(self):
+        return dom_to_tree(self._document)
+
+    def serialize(self, *args, **kwargs):
+        return serialize_dom(self._document, *args, **kwargs)
+
+    if HAS_XPATH:
+        def xpath(self, expression, other_namespaces=None):
+            if other_namespaces:
+                other_namespaces = other_namespaces.copy()
+                other_namespaces.update(_MATH_NS_DICT)
+            else:
+                other_namespaces = _MATH_NS_DICT
+            context = Context(self._document.documentElement, processorNss=other_namespaces)
+            return xpath.Evaluate(expression, context=context)
 
     def toMathml(self, out=None, indent=False):
         if out is None:

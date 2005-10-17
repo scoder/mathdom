@@ -10,7 +10,7 @@ from itertools import imap
 # Maybe we are still before installation?
 sys.path.append('..')
 
-from mathml.mathdom     import MathDOM
+from mathml.lmathdom    import MathDOM
 from mathml.termbuilder import tree_converters
 from mathml.termparser  import *
 from mathml.xmlterm     import *
@@ -51,7 +51,7 @@ def handle_term(term):
     print
     print "Exchanging '+' and '-' ..."
     print
-    for apply_tag in doc.getElementsByTagName(u'apply'):
+    for apply_tag in doc.xpath(u'//math:apply'):
         operator = apply_tag.operatorname()
         if operator == u'plus':
             apply_tag.set_operator(u'minus')
@@ -60,28 +60,18 @@ def handle_term(term):
     write_infix(doc)
 
     print
-    try:
-        doc.xpath
-        has_xpath = True
-    except AttributeError:
-        has_xpath = False
+    print "Searching for negative numbers using XPath expression '//math:cn[number() < 0]' ..."
+    print
+    for cn_tag in doc.xpath('//math:cn[number() < 0]'):
+        value = cn_tag.value()
+        print "%s [%s]" % (value, type(value))
 
-    if has_xpath:
-        print "Searching for negative numbers using XPath expression '//math:cn[number() < 0]' ..."
-        print
-        for cn_tag in doc.xpath('//math:cn[number() < 0]'):
-            value = cn_tag.value()
-            print "%s [%s]" % (value, type(value))
+    print
+    print "Serializing all sub-terms using XPath '//math:apply' ..."
+    print
 
-        print
-        print "Serializing all sub-terms using XPath '//math:apply' ..."
-        print
-
-        for apply_tag in doc.xpath('//math:apply'):
-            print apply_tag.serialize(converter=infix_converter)
-
-    else:
-        print "XPath not installed. Skipping test."
+    for apply_tag in doc.xpath('//math:apply'):
+        print apply_tag.serialize(converter=infix_converter)
 
     print
     print 'Done.'

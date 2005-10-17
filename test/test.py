@@ -7,7 +7,6 @@ from itertools import starmap
 from mathml.termparser   import term_parsers
 from mathml.termbuilder  import tree_converters
 from mathml.utils.pyterm import PyTermBuilder
-from mathml.mathdom import MathDOM
 from mathml.xmlterm import SaxTerm, serialize_dom
 
 
@@ -27,7 +26,7 @@ ARITHMETIC_TERMS = {
     '-2^3' : -2**3,
     '-2E4^3.4E-5' : -2E4**3.4E-5,
     '-.02E-4-13.4E-15*(-(-.02E-4+13.4E-15))' : -.02E-4-13.4E-15*(-(-.02E-4+13.4E-15)),
-#    ' 15*-(-1-15)'   :  15*-(1+1), # FAILS in Parser
+#    ' 15*-(1+1)'   :  15*-(1+1), # FAILS in Parser
     '-(2+3)^2' : -(2+3)**2,
     '-2^-3' : -2**-3,
     '-(3+2)^2-5^-2' : -(3+2)**2-5**-2,
@@ -58,7 +57,7 @@ TERMS = {
     }
 
 
-def ast_test(term, term_type):
+def ast_test(term, term_type, _):
     parser = term_parsers[term_type]
     converter = tree_converters['infix']
 
@@ -68,8 +67,8 @@ def ast_test(term, term_type):
     return pyeval(term_type, term, infix)
 
 
-def dom_test(term, term_type):
-    doc = MathDOM.fromString(term, term_type)
+def dom_test(term, term_type, mathdom):
+    doc = mathdom.fromString(term, term_type)
     infix = serialize_dom(doc, 'infix')
 
     return pyeval(term_type, term, infix)
@@ -77,19 +76,20 @@ def dom_test(term, term_type):
 
 ###
 
-def build_test_class(test_method, term_type):
+def build_test_class(test_method, term_type, which_MathDOM):
     class_name = "%s_%s" % (test_method.func_name, term_type)
+    impl_name  = which_MathDOM.__module__.split('.')[-1]
 
     def build_test_method(term, result):
         def test(self):
-            results = test_method(term, term_type)
+            results = test_method(term, term_type, which_MathDOM)
             #print result
             if result is None:
                 self.assertEqual(*results)
             else:
                 for r in results:
                     self.assertEqual(r, result)
-        test.__doc__ = "%s: %s" % (class_name.replace('_', ' '), term)
+        test.__doc__ = "%-8s - %s: %s" % (impl_name, class_name.replace('_', ' '), term)
         return test
 
     terms = TERMS[term_type]
@@ -108,8 +108,15 @@ if __name__ == '__main__':
     except ImportError:
         pass
 
+    from mathml.mathdom  import MathDOM as dMathDOM
+    from mathml.lmathdom import MathDOM as lMathDOM
+
     test_classes = starmap(build_test_class,
-                           ( (m, t) for m in (ast_test, dom_test) for t in TERMS.iterkeys())
+                           ( (m, t, mathdom)
+                             for mathdom in (dMathDOM, lMathDOM)
+                             for m in (ast_test, dom_test)
+                             for t in TERMS.iterkeys()
+                             )
                            )
 
     test_suite = unittest.makeSuite(test_classes.next())

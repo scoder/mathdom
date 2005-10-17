@@ -174,11 +174,11 @@ def dom_to_tree(doc_or_element):
             else:
                 return [ u'name', constant ]
         elif mtype == u'ci':
-            return [ u'name', element.firstChild.data ]
+            return [ u'name', element.name() ]
         elif mtype == u'cn':
             return [ u'const:%s' % element.valuetype().replace('-', ''), element.value() ]
         elif mtype == u'apply':
-            operator = element.firstChild
+            operator = element.operator()
             if operator.childNodes:
                 raise NotImplementedError, u"function composition is not supported"
             name = operator.localName
@@ -202,7 +202,10 @@ def dom_to_tree(doc_or_element):
     try:
         root = doc_or_element.documentElement
     except AttributeError:
-        root = doc_or_element
+        try:
+            root = doc_or_element.getroot()
+        except AttributeError:
+            root = doc_or_element
 
     tree = _recursive_dom_to_tree(root)
     if not isinstance(tree, list):

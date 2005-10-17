@@ -1,0 +1,271 @@
+Index: src/lxml/etree.pyx
+===================================================================
+--- src/lxml/etree.pyx	(Revision 18594)
++++ src/lxml/etree.pyx	(Arbeitskopie)
+@@ -155,6 +155,7 @@
+         return c_ns
+ 
+ cdef class _ElementTree(_DocumentBase):
++    cdef object _namespace_classes
+ 
+     def parse(self, source, parser=None):
+         """Updates self with the content of source and returns its root
+@@ -250,6 +251,10 @@
+         return root.findall(path)
+     
+     # extensions to ElementTree API
++    def saxify(self, content_handler):
++        "Output sax events for this tree to a SAX content handler."
++        _saxify(self.getroot(), content_handler)
++
+     def xpath(self, path, namespaces=None):
+         """XPath evaluate in context of document.
+ 
+@@ -339,12 +344,29 @@
+             file = open(file, 'wb')
+         file.write(data)
+         tree.xmlFree(data)
+-    
++
++    def register_namespace_classes(self, namespace, class_dict):
++        """Register a namespace implementation local to this
++        ElementTree.
++
++        This can be used to override the module-level registry."""
++        ns_utf = namespace.encode('UTF-8')
++        self._namespace_classes[ns_utf] = _build_namespace_impl_dict(class_dict)
++
++    def unregister_namespace_classes(self, namespace, class_dict):
++        """Unregister a namespace implementation.
++
++        See register_namespace_classes()."""
++        ns_utf = namespace.encode('UTF-8')
++        del self._namespace_classes[ns_utf]
++
++
+ cdef _ElementTree _elementTreeFactory(xmlDoc* c_doc):
+     cdef _ElementTree result
+     result = _ElementTree()
+     result._ns_counter = 0
+     result._c_doc = c_doc
++    result._namespace_classes = {}
+     return result
+ 
+ cdef class _Element(_NodeBase):
+@@ -671,15 +693,26 @@
+     def xpath(self, path, namespaces=None):
+         return XPathElementEvaluator(self, namespaces).evaluate(path)
+ 
++    def saxify(self, content_handler):
++        """Output sax events for this element and its subtree to a SAX
++        content handler."""
++        _saxify(self, content_handler)
++
+ cdef _Element _elementFactory(_ElementTree etree, xmlNode* c_node):
+     cdef _Element result
++    cdef char* c_ns_href
+     result = getProxy(c_node, PROXY_ELEMENT)
+     if result is not None:
+         return result
+     if c_node is NULL:
+         return None
+     if c_node.type == tree.XML_ELEMENT_NODE:
+-        result = _Element()
++        if c_node.ns == NULL:
++            c_ns_href = NULL
++        else:
++            c_ns_href = c_node.ns.href
++        element_class = _find_element_class(etree, c_ns_href, c_node.name)
++        result = element_class()
+     elif c_node.type == tree.XML_COMMENT_NODE:
+         result = _Comment()
+     else:
+@@ -959,6 +992,33 @@
+     c_node = tree.xmlNewDocComment(c_doc, text)
+     return c_node
+ 
++
++# module-level API for namespace implementations
++
++class ElementImpl(_Element):
++    """All classes in namespace implementations must inherit from
++    this one.  Note that subclasses *must not* override __init__."""
++    pass
++
++def register_namespace_classes(namespace, class_dict):
++    """Register a namespace implementation.
++
++    The namespace URI will be associated with a class dictionary.
++    Whenever elements from this namespace are created or read from the
++    XML tree, the dictionary is consulted for their local name to
++    build the class that implements them. Classes associated with the
++    None value represent the default class for the entire namespace."""
++    ns_utf = namespace.encode('UTF-8')
++    __NAMESPACE_CLASSES[ns_utf] = _build_namespace_impl_dict(class_dict)
++
++def unregister_namespace_classes(namespace):
++    """Unregister a namespace implementation.
++
++    See register_namespace_classes()."""
++    ns_utf = namespace.encode('UTF-8')
++    del __NAMESPACE_CLASSES[ns_utf]
++
++
+ # module-level API for ElementTree
+ 
+ def Element(tag, attrib=None, nsmap=None, **extra):
+@@ -1643,7 +1703,154 @@
+ cdef Parser theParser
+ theParser = Parser()
+ 
++# SAX compatible I/O
++
++cdef class SaxTreeBuilder:
++    cdef _Element _root
++    cdef object _element_stack
++    cdef object _ns_mapping
++    cdef object __ns_template
++
++    def __init__(self):
++        self._root = None
++        self._element_stack = []
++        self._ns_mapping = {}
++        self.__ns_template = unicode("{%s}%s")
++
++    property etree:
++        "Contains the generated ElementTree after parsing is finished."
++        def __get__(self):
++            return ElementTree(self._root)
++
++    def startDocument(self):
++        pass
++    def endDocument(self):
++        pass
++
++    def startPrefixMapping(self, prefix, uri):
++        self._ns_mapping[prefix] = uri
++    def endPrefixMapping(self, prefix):
++        del self._ns_mapping[prefix]
++
++    def startElementNS(self, tag_tuple, qname, attributes):
++        if tag_tuple[0]:
++            el_name = self.__ns_template % tag_tuple
++        else:
++            el_name = tag_tuple[1]
++
++        try:
++            iter_attributes = attributes.iteritems()
++        except AttributeError:
++            iter_attributes = attributes.items()
++
++        attrs = {}
++        for name_tuple, value in iter_attributes:
++            if name_tuple[0]:
++                attr_name = self.__ns_template % name_tuple
++            else:
++                attr_name = name_tuple[1]
++            attrs[attr_name] = value
++
++        element_stack = self._element_stack
++        if self._root is None:
++            element = self._root = Element(el_name, attrs, self._ns_mapping)
++        else:
++            element = SubElement(element_stack[-1], el_name, attrs, self._ns_mapping)
++        element_stack.append(element)
++    def endElementNS(self, tag, qname):
++        self._element_stack.pop()
++
++    def characters(self, data):
++        element = self._element_stack[-1]
++        try:
++            element = element[-1]
++            element.tail = (element.tail or unicode()) + data
++        except IndexError:
++            element.text = (element.text or unicode()) + data
++
++cdef _saxify(_Element element, content_handler):
++    from xml.sax.xmlreader import AttributesNSImpl as attr_class
++    empty_attributes = attr_class({}, {})
++
++    _recursive_saxify(element, content_handler, {}, empty_attributes, attr_class)
++
++cdef object _build_qname(namespace, local_name, prefixes, new_prefixes):
++    try:
++        prefix = prefixes[namespace]
++    except KeyError:
++        prefix = prefixes[namespace] = unicode('ns%02d') % len(prefixes)
++        new_prefixes.append( (prefix, namespace) )
++    return prefix + ':' + local_name
++
++cdef _recursive_saxify(_Element element, content_handler, prefixes, empty_attributes, attr_class):
++    new_prefixes = []
++    if element.attrib:
++        attr_values = {}
++        attr_qnames = {}
++        for attr_ns_name, value in element.attrib.items():
++            attr_ns_tuple = _getNsTag(attr_ns_name)
++            attr_values[attr_ns_tuple] = value
++            attr_qnames[attr_ns_tuple] = _build_qname(attr_ns_tuple[0], attr_ns_tuple[1],
++                                                      prefixes, new_prefixes)
++        sax_attributes = attr_class(attr_values, attr_qnames)
++    else:
++        sax_attributes = empty_attributes
++
++    namespace, tag = _getNsTag(element.tag)
++    qname = _build_qname(namespace, tag, prefixes, new_prefixes)
++
++    for prefix, uri in new_prefixes:
++        content_handler.startPrefixMapping(prefix, uri)
++    content_handler.startElementNS((namespace, tag), qname, sax_attributes)
++    if element.text:
++        content_handler.characters(element.text)
++    for child in element:
++        _recursive_saxify(child, content_handler, prefixes, empty_attributes, attr_class)
++    content_handler.endElementNS((namespace, tag), qname)
++    for prefix, uri in new_prefixes:
++        content_handler.endPrefixMapping(prefix)
++    if element.tail:
++        content_handler.characters(element.tail)
++
+ # Private helper functions
++__NAMESPACE_CLASSES = {}
++
++cdef object _find_element_class(_ElementTree etree, char* c_namespace_utf, char* c_element_name_utf):
++    element_name_utf = c_element_name_utf
++    if c_namespace_utf == NULL:
++        if element_name_utf[:1] == '{':
++            namespace_utf, element_name_utf = element_name_utf[1:].split('}', 1)
++        else:
++            namespace_utf = None
++    else:
++        namespace_utf = c_namespace_utf
++
++    for namespace_dict in (etree._namespace_classes, __NAMESPACE_CLASSES):
++        try:
++            class_dict = namespace_dict[namespace_utf]
++        except KeyError:
++            continue
++        try:
++            return class_dict[element_name_utf]
++        except KeyError:
++            pass
++        try:
++            return class_dict[None]
++        except KeyError:
++            break # do not try the other dict, we might mix different implementations!
++    return _Element
++
++cdef object _build_namespace_impl_dict(class_dict):
++    d = {}
++    for name, cls in class_dict.iteritems():
++        if issubclass(cls, _Element):
++            if name is None:
++                name_utf = None
++            else:
++                name_utf = name.encode('UTF-8')
++            d[name_utf] = cls
++    return d
++
+ cdef _dumpToFile(f, xmlDoc* c_doc, xmlNode* c_node):
+     cdef tree.PyObject* o
+     cdef tree.xmlOutputBuffer* c_buffer

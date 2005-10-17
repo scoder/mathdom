@@ -22,6 +22,12 @@ notation.
 
 If you want to test it, run 'examples/infix.py'.
 
+New in 0.5.2: There is a second implementation that shares most of the
+code but replaces the DOM implementation with a patched version of
+lxml [3], an XML API similar to ElementTree [4], but implemented on
+top of libxml2 [5]. Please apply the patch that comes with MathDOM if
+you want to use lxml. The patch applies to version 0.7 of lxml.
+
 
 Current status:
 ---------------
@@ -50,32 +56,48 @@ The files:
 
 * Installation:
 
-setup.py          - distutils, try "python setup.py install"
+setup.py           - distutils, try "python setup.py install"
+
+
+* Patching lxml:
+
+lxml+custom_classes+saxify.patch - apply in the lxml source directory (using -p0).
 
 
 * Examples are in "examples/":
 
-examples/infix.py - example program: read a term, write out MathML,
-                    infix, prefix, postfix representations
-                    -> START HERE if you want to figure out how
-                    everything works.
+examples/infix.py  - example program: read a term, write out MathML,
+                     infix, prefix, postfix representations
+                     -> START HERE if you want to figure out how
+                     everything works.
+
+examples/dom.py    - example program: read a term, do some DOM stuff
+
+examples/ldom.py   - example program: read a term, do some lxml/xpath stuff
 
 
 * The actual package source is in "mathml/":
 
-src/mathdom.py    - the DOM implemention
+src/mathdom.py     - the DOM implemention
 
-src/xmlterm.py    - SAX generator for the termparser AST
+src/lmathdom.py    - the lxml implemention
 
-src/termparser.py - parser/serializer for literal terms,
-                    framework for converters
+src/xmlterm.py     - SAX generator for the termparser AST
+
+src/termparser.py  - parser for literal infix terms
+
+src/termbuilder.py - serializer for literal terms,
+                     framework for output converters
 
 
 References
 ----------
 
-[1] pyparsing: http://pyparsing.sf.net
-[2] PyXML:     http://pyxml.sf.net
+[1] pyparsing:   http://pyparsing.sf.net
+[2] PyXML:       http://pyxml.sf.net
+[3] lxml:        http://codespeak.net/lxml/
+[4] ElementTree: http://effbot.org/zone/element-index.htm
+[5] libxml2:     http://xmlsoft.org/
 
 
 Have fun!
