@@ -34,10 +34,10 @@ A quick example:
 
 >>> from mathml.lmathdom import MathDOM                     # use lxml implementation
 >>> doc = MathDOM.fromString("+2^x+4*-5i/6", "infix_term")  # parse infix term
->>> for apply_tag in doc.xpath(u'//math:apply[math:plus]'): # replace '+' with '-'
-...     apply_tag.set_operator(u'minus')
 >>> [ n.value() for n in doc.xpath(u'//math:cn[@type="integer"]') ] # find integers
 [2, 4, 6]
+>>> for apply_tag in doc.xpath(u'//math:apply[math:plus]'): # replace '+' with '-'
+...     apply_tag.set_operator(u'minus')
 >>> from mathml.utils import pyterm                         # register Python term builder
 >>> doc.serialize("python")                                 # serialize to Python term
 u'2 ** x - 4 * (-5j) / 6'
