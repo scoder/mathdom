@@ -59,6 +59,10 @@ TERMS = {
     }
 
 
+from mathml import FUNCTIONS, RELATIONS
+ALL_OPERATORS = frozenset(chain(FUNCTIONS.split(), RELATIONS.split()))
+
+
 def ast_test(term, term_type, _):
     parser = term_parsers[term_type]
     infix_converter  = tree_converters['infix']
@@ -78,29 +82,51 @@ def dom_test(term, term_type, mathdom):
 
     return chain(pyeval(term_type, term, infix), [eval(pyterm)])
 
-
 ###
 
-def build_test_class(test_method, term_type, which_MathDOM):
-    class_name = "%s_%s" % (test_method.func_name, term_type)
-    impl_name  = which_MathDOM.__module__.split('.')[-1]
+def build_test_class(term_type, mathdom):
+    class_name = term_type
+    impl_name  = mathdom.__module__.rsplit('.', 1)[-1]
 
-    def build_test_method(term, result):
+    def docstr(test_name, term):
+        return "%-8s - %-8s - %s: %s" % (impl_name, test_name, class_name.replace('_', ' '), term)
+
+    def build_term_test_method(test_method, term, result):
         def test(self):
-            result_iter = test_method(term, term_type, which_MathDOM)
+            result_iter = test_method(term, term_type, mathdom)
             #print result
             if result is None:
                 self.assertEqual(*tuple(result_iter)[:2])
             else:
                 for r in result_iter:
                     self.assertEqual(r, result)
-        test.__doc__ = "%-8s - %s: %s" % (impl_name, class_name.replace('_', ' '), term)
+        test.__doc__ = docstr(test_method.func_name, term)
+        return test
+
+    def build_dom_test_method(term):
+        def test(self):
+            doc = mathdom.fromString(term, term_type)
+            root = doc.xpath("/*")[0]
+            try:
+                value = float(term)
+                self.assertEquals(root.value(), value)
+            except ValueError:
+                self.assertEquals(root.mathtype(), 'apply')
+                self.assert_(root.firstChild.mathtype() in ALL_OPERATORS,
+                             root.firstChild.mathtype())
+        test.__doc__ = docstr("dom_work", term)
         return test
 
     terms = TERMS[term_type]
     tests = dict(
-        ('test%03d' % i, build_test_method(term, result))
+        ('test_term_%03d' % (2*i+m), build_term_test_method(test_method, term, result))
         for i, (term, result) in enumerate(sorted(terms.iteritems()))
+        for m, test_method in enumerate((ast_test, dom_test))
+        )
+
+    tests.update(
+        ('test_dom_%03d' % i, build_dom_test_method(term))
+        for i, term in enumerate(sorted(terms.iterkeys()))
         )
 
     return type(class_name, (unittest.TestCase,), tests)
@@ -113,13 +139,21 @@ if __name__ == '__main__':
     except ImportError:
         pass
 
-    from mathml.mathdom  import MathDOM as dMathDOM
-    from mathml.lmathdom import MathDOM as lMathDOM
+    mathdom_impls = []
+    try:
+        from mathml.mathdom  import MathDOM as pyMathDOM
+        mathdom_impls.append(pyMathDOM)
+    except ImportError:
+        pass
+    try:
+        from mathml.lmathdom import MathDOM as lxMathDOM
+        mathdom_impls.append(lxMathDOM)
+    except ImportError:
+        pass
 
     test_classes = starmap(build_test_class,
-                           ( (m, t, mathdom)
-                             for mathdom in (dMathDOM, lMathDOM)
-                             for m in (ast_test, dom_test)
+                           ( (t, mathdom)
+                             for mathdom in mathdom_impls
                              for t in TERMS.iterkeys()
                              )
                            )
