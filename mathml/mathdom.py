@@ -18,7 +18,7 @@ from xml.dom.ext import Print, PrettyPrint
 from xml.dom.ext.reader.Sax2 import Reader
 
 
-from mathml           import MATHML_NAMESPACE_URI
+from mathml           import MATHML_NAMESPACE_URI, UNARY_FUNCTIONS
 from mathml.xmlterm   import SaxTerm, dom_to_tree, serialize_dom
 from mathml.datatypes import Decimal, Complex, Rational, ENotation
 
@@ -30,65 +30,6 @@ TYPE_MAP = {
     'rational'   : Rational,
     'e-notation' : ENotation
     }
-
-
-UNARY_ARITHMETIC_FUNCTIONS = u"""
-factorial minus abs conjugate arg real imaginary floor ceiling
-"""
-
-UNARY_LOGICAL_FUNCTIONS    = u"""
-not
-"""
-
-UNARY_ELEMENTARY_CLASSICAL_FUNCTIONS = u"""
-sin cos tan sec csc cot sinh cosh tanh sech csch coth
-arcsin arccos arctan arccosh arccot arccoth arccsc arccsch
-arcsec arcsech arcsinh arctanh exp ln log
-"""
-
-BINARY_ARITHMETIC_FUNCTIONS = u"""
-quotient divide minus power rem
-"""
-
-NARY_ARITHMETIC_FUNCTIONS = u"""
-plus times max min gcd lcm
-"""
-
-NARY_STATISTICAL_FUNCTIONS = u"""
-mean sdev variance median mode
-"""
-
-NARY_LOGICAL_FUNCTIONS = u"""
-and or xor
-"""
-
-NARY_FUNCTIONAL_FUNCTION = u"""
-compose
-"""
-
-BINARY_SET_CONTAINMENT = u"""
-in notin
-"""
-
-CONSTANTS = u"""
-pi ExponentialE ee ImaginaryI ii gamma infin infty true false NotANumber NaN
-"""
-
-##
-
-UNARY_FUNCTIONS  = UNARY_ELEMENTARY_CLASSICAL_FUNCTIONS + \
-                   UNARY_ARITHMETIC_FUNCTIONS + \
-                   UNARY_LOGICAL_FUNCTIONS
-
-BINARY_FUNCTIONS = BINARY_ARITHMETIC_FUNCTIONS + \
-                   BINARY_SET_CONTAINMENT
-
-NARY_FUNCTIONS   = NARY_ARITHMETIC_FUNCTIONS + \
-                   NARY_STATISTICAL_FUNCTIONS + \
-                   NARY_LOGICAL_FUNCTIONS + \
-                   NARY_FUNCTIONAL_FUNCTION
-
-##
 
 
 METHODS_BY_ELEMENT_NAME = {}
