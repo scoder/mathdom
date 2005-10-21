@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, '..')
 
 import unittest
-from itertools import chain, starmap
+from itertools import count, chain, starmap
 
 from mathml.termparser   import term_parsers
 from mathml.termbuilder  import tree_converters
@@ -89,9 +89,10 @@ def build_test_class(term_type, mathdom):
     impl_name  = mathdom.__module__.rsplit('.', 1)[-1]
 
     def docstr(test_name, term):
-        return "%-8s - %-8s - %s: %s" % (impl_name, test_name, class_name.replace('_', ' '), term)
+        return "%-8s - %-9s - %s: %s" % (impl_name, test_name, class_name.replace('_', ' '), term)
 
     def build_term_test_method(test_method, term, result):
+        'test_term_%03d'
         def test(self):
             result_iter = test_method(term, term_type, mathdom)
             #print result
@@ -104,6 +105,7 @@ def build_test_class(term_type, mathdom):
         return test
 
     def build_dom_test_method(term):
+        "test_dom_%03d"
         def test(self):
             doc = mathdom.fromString(term, term_type)
             root = doc.xpath("/*")[0]
@@ -117,15 +119,34 @@ def build_test_class(term_type, mathdom):
         test.__doc__ = docstr("dom_work", term)
         return test
 
+    def build_output_test(term, method_name):
+        "test_output_%03d"
+        if not hasattr(mathdom, method_name):
+            return None
+        def test(self):
+            doc = mathdom.fromString(term, term_type)
+            result = getattr(doc, method_name)()
+            self.assert_(result, result)
+        test.__doc__ = docstr(method_name, term)
+        return test
+
     terms = TERMS[term_type]
+    test_name = ("test_%05d" % i for i in count()).next
+
     tests = dict(
-        ('test_term_%03d' % (2*i+m), build_term_test_method(test_method, term, result))
-        for i, (term, result) in enumerate(sorted(terms.iteritems()))
+        (test_name(), build_term_test_method(test_method, term, result))
         for m, test_method in enumerate((ast_test, dom_test))
+        for i, (term, result) in enumerate(sorted(terms.iteritems()))
         )
 
     tests.update(
-        ('test_dom_%03d' % i, build_dom_test_method(term))
+        (test_name(), build_dom_test_method(term))
+        for i, term in enumerate(sorted(terms.iterkeys()))
+        )
+
+    tests.update(
+        (test_name(), build_output_test(term, method_name))
+        for m, method_name in enumerate(['to_pres', 'to_tree', 'serialize'])
         for i, term in enumerate(sorted(terms.iterkeys()))
         )
 
@@ -158,9 +179,7 @@ if __name__ == '__main__':
                              )
                            )
 
-    test_suite = unittest.makeSuite(test_classes.next())
-    for testclass in test_classes:
-        test_suite2 = unittest.makeSuite(testclass)
-        test_suite.addTest(test_suite2)
+    test_suite = unittest.TestSuite()
+    test_suite.addTests(map(unittest.makeSuite, test_classes))
 
     unittest.TextTestRunner(verbosity=2).run(test_suite)
