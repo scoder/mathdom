@@ -5,7 +5,7 @@ __all__ = [ 'MathDOM' ]
 import sys, new
 from itertools import chain
 
-from lxml.etree import parse, ElementImpl, Element, SubElement, ElementTree, register_namespace_classes
+from lxml.etree import parse, ElementBase, Element, SubElement, ElementTree, register_namespace_classes
 from lxml.TreeBuilder import SaxTreeBuilder
 
 from mathml           import MATHML_NAMESPACE_URI
@@ -132,7 +132,7 @@ class Qualifier(object):
             qualifier_node.append(value)
 
 
-class MathElement(ElementImpl):
+class MathElement(ElementBase):
     @property
     def localName(self):
         tagname = self.tag
