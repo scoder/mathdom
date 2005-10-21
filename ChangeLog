@@ -1,3 +1,63 @@
+2005-10-21  scoder  <scoder@toaster>
+
+	* README: more on lxml
+
+	* MANIFEST.in, README, lxml+custom_classes+saxify.patch, lxml.patch:
+	new lxml patch (renamed to lxml.patch)
+
+	* mathml/lmathdom.py, setup.py: adapt to new lxml patches
+
+2005-10-19  scoder  <scoder@toaster>
+
+	* README: reorder example
+
+	* html/MathDOM.html, html/copy.sh: spell check, link to lxml patch
+
+2005-10-18  scoder  <scoder@toaster>
+
+	* html/MathDOM.html, html/copy.sh: link download file directly
+
+2005-10-17  scoder  <scoder@toaster>
+
+	* README: doc
+
+	* ChangeLog: 0.5.3
+
+	* README, html/MathDOM.html, html/codestyle.css, html/copy.sh:
+	documentation updates
+
+	* mathml/utils/pyterm.py: fix complex output
+
+	* setup.py: start work on 0.5.3
+
+	* mathml/utils/pyterm.py: fix complex output
+
+	* examples/ldom.py: make XPath expression more selective
+
+	* README: add example in README
+
+	* setup.py: adapt description to 0.5.2
+
+	* test/test.py: test python DOM serializer
+
+	* html/MathDOM.html, html/logo.png:
+	mention features of 0.5.2, redesign, make logo smaller
+
+	* html/MathDOM.html: emntion python converter
+
+	* html/MathDOM.html: move link
+
+	* html/MathDOM.html: added link to lxml
+
+	* ChangeLog: 0.5.2
+
+	* mathml/lmathdom.py, mathml/mathdom.py, mathml/xmlterm.py, test/test.py, README, examples/dom.py, examples/ldom.py, lxml+custom_classes+saxify.patch, setup.py:
+	0.5.2
+	added implementation based on lxml + patch for lxml
+	adapted other parts to more generic API
+
+	* MANIFEST.in: add lxml patch
+
 2005-10-17  scoder  <scoder@toaster>
 
 	* README, html/MathDOM.html, html/codestyle.css, html/copy.sh:
