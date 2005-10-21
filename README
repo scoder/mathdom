@@ -25,8 +25,12 @@ If you want to test it, run 'examples/infix.py'.
 New in 0.5.2: There is a second implementation that shares most of the
 code but replaces the DOM implementation with a patched version of
 lxml [3], an XML API similar to ElementTree [4], but implemented on
-top of libxml2 [5]. Please apply the patch that comes with MathDOM if
-you want to use lxml. The patch should apply to version 0.7 of lxml.
+top of libxml2 [5]. That makes it much faster than the pure Python
+implementation (just try test/test.py) and it supports more XML
+features, like XSLT and XInclude. Please apply the patch that comes
+with MathDOM if you want to use lxml. The patch should apply to
+version 0.7 or newer SVN versions of lxml. Not tested with 0.8 which
+may include parts of the patch.
 
 
 A quick example:
