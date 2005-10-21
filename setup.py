@@ -1,7 +1,7 @@
 from distutils.core import setup
 setup(
     name='mathdom',
-    version='0.6.0',
+    version='0.6.1',
     packages=['mathml', 'mathml.utils'],
     package_data = {
     'mathml'       : ['schema/mathml2.rng.gz'],
