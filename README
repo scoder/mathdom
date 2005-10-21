@@ -26,7 +26,7 @@ New in 0.5.2: There is a second implementation that shares most of the
 code but replaces the DOM implementation with a patched version of
 lxml [3], an XML API similar to ElementTree [4], but implemented on
 top of libxml2 [5]. Please apply the patch that comes with MathDOM if
-you want to use lxml. The patch applies to version 0.7 of lxml.
+you want to use lxml. The patch should apply to version 0.7 of lxml.
 
 
 A quick example:
@@ -79,7 +79,7 @@ setup.py           - distutils, try "python setup.py install"
 
 * Patching lxml:
 
-lxml+custom_classes+saxify.patch - apply in the lxml source directory (using -p0).
+lxml.patch - apply in the lxml source directory (using -p0).
 
 
 * Examples are in "examples/":

@@ -1,4 +1,4 @@
-include setup.py README LICENSE ChangeLog lxml+custom_classes+saxify.patch
+include setup.py README LICENSE ChangeLog lxml.patch
 recursive-include test *.py
 recursive-include mathml *.py
 recursive-include examples *.py
