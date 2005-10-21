@@ -1,5 +1,12 @@
 2005-10-21  scoder  <scoder@toaster>
 
+	* __init__.py, lmathdom.py, mathdom.py:
+	move MathML constant definitions into top-level module
+
+	* lmathdom.py: adapt to new lxml patches
+
+2005-10-21  scoder  <scoder@toaster>
+
 	* README: more on lxml
 
 	* MANIFEST.in, README, lxml+custom_classes+saxify.patch, lxml.patch:
