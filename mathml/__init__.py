@@ -1,5 +1,6 @@
 MATHML_NAMESPACE_URI = u"http://www.w3.org/1998/Math/MathML"
 
+
 UNARY_ARITHMETIC_FUNCTIONS = u"""
 factorial minus abs conjugate arg real imaginary floor ceiling
 """

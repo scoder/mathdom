@@ -207,6 +207,8 @@ def dom_to_tree(doc_or_element):
         except AttributeError:
             root = doc_or_element
 
+    if root.mathtype() == u'math':
+        root = root.firstChild
     tree = _recursive_dom_to_tree(root)
     if not isinstance(tree, list):
         return [ tree ]
@@ -279,7 +281,11 @@ class SaxTerm(XMLReader):
         parser = self.parser
         parser.startDocument()
         parser.startPrefixMapping(None, MATHML_NAMESPACE_URI)
+
+        self._open_tag(u'math')
         self._recursive_tree_to_sax(tree)
+        self._close_tag(u'math')
+
         parser.endPrefixMapping(None)
         parser.endDocument()
 

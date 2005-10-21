@@ -92,7 +92,6 @@ def build_test_class(term_type, mathdom):
         return "%-8s - %-9s - %s: %s" % (impl_name, test_name, class_name.replace('_', ' '), term)
 
     def build_term_test_method(test_method, term, result):
-        'test_term_%03d'
         def test(self):
             result_iter = test_method(term, term_type, mathdom)
             #print result
@@ -105,22 +104,23 @@ def build_test_class(term_type, mathdom):
         return test
 
     def build_dom_test_method(term):
-        "test_dom_%03d"
         def test(self):
             doc = mathdom.fromString(term, term_type)
             root = doc.xpath("/*")[0]
-            try:
-                value = float(term)
-                self.assertEquals(root.value(), value)
-            except ValueError:
-                self.assertEquals(root.mathtype(), 'apply')
-                self.assert_(root.firstChild.mathtype() in ALL_OPERATORS,
-                             root.firstChild.mathtype())
+            self.assertEquals(root.mathtype(), u'math')
+            element = root.firstChild
+            if element:
+                try:
+                    value = float(term)
+                    self.assertEquals(element.value(), value)
+                except ValueError:
+                    self.assertEquals(element.mathtype(), 'apply')
+                    self.assert_(element.firstChild.mathtype() in ALL_OPERATORS,
+                                 element.firstChild.mathtype())
         test.__doc__ = docstr("dom_work", term)
         return test
 
     def build_output_test(term, method_name):
-        "test_output_%03d"
         if not hasattr(mathdom, method_name):
             return None
         def test(self):
@@ -128,6 +128,15 @@ def build_test_class(term_type, mathdom):
             result = getattr(doc, method_name)()
             self.assert_(result, result)
         test.__doc__ = docstr(method_name, term)
+        return test
+
+    def build_validate_test(term):
+        if not hasattr(mathdom, 'validate'):
+            return None
+        def test(self):
+            doc = mathdom.fromString(term, term_type)
+            self.assert_(doc.validate())
+        test.__doc__ = docstr("validate", term)
         return test
 
     terms = TERMS[term_type]
@@ -140,7 +149,8 @@ def build_test_class(term_type, mathdom):
         )
 
     tests.update(
-        (test_name(), build_dom_test_method(term))
+        (test_name(), test_builder(term))
+        for test_builder in (build_dom_test_method, build_validate_test)
         for i, term in enumerate(sorted(terms.iterkeys()))
         )
 

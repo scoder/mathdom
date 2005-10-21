@@ -2,10 +2,12 @@
 
 __all__ = [ 'MathDOM' ]
 
-import sys, new
+import sys
 from itertools import chain
+from StringIO  import StringIO
 
-from lxml.etree import parse, ElementBase, Element, SubElement, ElementTree, register_namespace_classes
+from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
+                        register_namespace_classes, XSLT, XMLSchema, RelaxNG)
 from lxml.TreeBuilder import SaxTreeBuilder
 
 from mathml           import MATHML_NAMESPACE_URI, UNARY_FUNCTIONS
@@ -18,6 +20,51 @@ TYPE_MAP = {
     'rational'   : Rational,
     'e-notation' : ENotation
     }
+
+# try to read XSL stylesheet for Content -> Presentation conversion
+MML_CTOP = None
+xslt_filename = None
+try:
+    from os import path
+    xslt_filename = path.abspath( path.join(path.dirname(__file__), 'utils', 'mmlctop.xsl') )
+    del path
+    MML_CTOP = XSLT( parse(xslt_filename) )
+except IOError:
+    pass
+except Exception, e:
+    print e
+    pass
+del xslt_filename
+
+# try to read XML Schema for MathML validation (doesn't currently work because of libxml2)
+MML_SCHEMA = None
+## schema_filename = None
+## try:
+##     from os import path
+##     schema_filename = path.abspath( path.join(path.dirname(__file__), 'schema', 'mathml2-content.xsd') )
+##     del path
+##     MML_SCHEMA = XMLSchema( parse(schema_filename) )
+## except IOError:
+##     pass
+## except Exception, e:
+## #    print e
+##     pass
+## del schema_filename
+
+# try to read RelaxNG schema for MathML validation
+MML_RNG = None
+schema_filename = None
+try:
+    from os import path
+    schema_filename = path.abspath( path.join(path.dirname(__file__), 'schema', 'mathml2.rng.gz') )
+    del path
+    MML_RNG = RelaxNG( parse(schema_filename) )
+except IOError:
+    pass
+except Exception, e:
+    print "Error reading RelaxNG schema for MathML:", e
+    pass
+del schema_filename
 
 
 _MATH_NS_DICT = {u'math' : MATHML_NAMESPACE_URI}
@@ -140,7 +187,21 @@ class SerializableMathElement(MathElement):
 
     def serialize(self, *args, **kwargs):
         return serialize_dom(self, *args, **kwargs)
-    
+
+    if MML_CTOP:
+        def to_pres(self, keep_semantics=True, all_semantics=True):
+            """Returns an ElementTree containing a Presentational
+            MathML representation of this document."""
+            if all_semantics:
+                semantics = "SEM_ALL"
+            elif keep_semantics:
+                semantics = "SEM_PASS"
+            else:
+                semantics = "SEM_STRIP"
+            return MML_CTOP.apply(ElementTree(self))
+
+class math_math(SerializableMathElement):
+    IMPLEMENTS = u'math'
 
 class math_cn(SerializableMathElement):
     IMPLEMENTS = u'cn'
@@ -164,10 +225,12 @@ class math_cn(SerializableMathElement):
             return u'real' # MathML default!
 
     def set_rational(self, *value):
+        "Set the rational value of this element"
         value = Rational(*value)
         self._set_tuple_value(u'rational', (value.num_str, value.denom_str))
 
     def set_complex(self, value):
+        "Set the complex value of this element"
         try:
             tuple_value = (value.real_str, value.imag_str)
         except AttributeError:
@@ -196,6 +259,8 @@ class math_cn(SerializableMathElement):
         self.set(u'type', typename)
 
     def set_value(self, value, type_name=None):
+        """Set the value of this element. May have to specify a MathML
+        type name for clarity."""
         if isinstance(value, complex):
             self.set_complex(value)
             return
@@ -294,7 +359,10 @@ class math_log(math_unary_function):
 
 
 class MathDOM(object):
-    def __init__(self, etree):
+    def __init__(self, etree=None):
+        if etree is None:
+            root = Element(u'{%s}math' % MATHML_NAMESPACE_URI)
+            etree = ElementTree(root)
         self._etree = etree
 
     @staticmethod
@@ -327,14 +395,55 @@ class MathDOM(object):
     def toMathml(self, out=None, indent=False):
         if out is None:
             out = sys.stdout
+        tree = self._etree
+        try:
+            if tree.getroot().mathtype() != u'math':
+                math_root = Element(u'{%s}math' % MATHML_NAMESPACE_URI)
+                math_root[:] = [tree.getroot()]
+                tree = ElementTree(math_root)
+        except AttributeError:
+            pass
         #if indent: ??
         self._etree.write(out, 'UTF-8')
+
+    if MML_CTOP:
+        def to_pres(self, *args, **kwargs):
+            """Returns an ElementTree containing a Presentational
+            MathML representation of this document."""
+            root = self._etree.getroot()
+            try:
+                return root.to_pres(*args, **kwargs)
+            except AttributeError:
+                return None
+
+    if MML_SCHEMA:
+        def validate(self):
+            return MML_SCHEMA.validate(self._etree)
+    elif MML_RNG:
+        def validate(self):
+            return MML_RNG.validate(self._etree)
 
     def to_tree(self):
         return dom_to_tree(self._etree)
 
-    def serialize(self, *args, **kwargs):
-        return serialize_dom(self._etree, *args, **kwargs)
+    def serialize(self, output_format=None, converter=None, **kwargs):
+        """Serialize to 'mathml' (default), 'pmathml' or any other
+        supported term format."""
+        if converter is None:
+            if output_format is None:
+                output_format = 'mathml'
+            if output_format == 'mathml':
+                out = StringIO()
+                self.toMathml(out, False)
+                return out.getvalue()
+            elif output_format == 'pmathml':
+                if not hasattr(self, 'to_pres'):
+                    raise ValueError, "Presentation MathML requires XSL script installed."
+                etree = self.to_pres(**kwargs)
+                out = StringIO()
+                etree.write(out, 'UTF-8')
+                return out.getvalue()
+        return serialize_dom(self._etree, output_format, converter)
 
     def xpath(self, expression, other_namespaces=None):
         if other_namespaces:
@@ -350,28 +459,16 @@ class MathDOM(object):
     # new DOM methods:
 
     def createApply(self, name, *args):
-        create_element = self._document.createElementNS
-        apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
-        function_tag = create_element(MATHML_NAMESPACE_URI, name)
-        apply_tag.appendChild(function_tag)
-        augmentElements(apply_tag)
+        apply_tag = Element(u'{%s}apply' % MATHML_NAMESPACE_URI)
+        function_tag = SubElement(apply_tag, u'{%s}%s' % (MATHML_NAMESPACE_URI, name))
         if args:
-            function_tag.childNodes[:] = args
+            function_tag[:] = args
         return apply_tag
 
-    def createFunction(self, name, *args):
-        create_element = self._document.createElementNS
-        apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
-        function_tag = create_element(MATHML_NAMESPACE_URI, name)
-        apply_tag.appendChild(function_tag)
-        augmentElements(apply_tag)
-        if args:
-            function_tag.childNodes[:] = args
-        return apply_tag
+    createFunction = createApply
 
     def createConstant(self, value):
-        create_element = self._document.createElementNS
-        cn_tag = create_element(MATHML_NAMESPACE_URI, u'cn')
+        cn_tag = Element(u'{%s}cn' % MATHML_NAMESPACE_URI)
         cn_tag.set_value(value)
         return cn_tag
 

@@ -4,6 +4,7 @@ __all__ = [ 'MathDOM' ]
 
 import sys, new
 from itertools import chain
+from StringIO  import StringIO
 
 try:
     from xml import xpath
@@ -271,7 +272,7 @@ class MathValue(Element):
 DEFAULT_DICT = {}
 def setupDefaults():
     dom_impl = getDOMImplementation()
-    doc = dom_impl.createDocument(MATHML_NAMESPACE_URI, u"apply", None)
+    doc = dom_impl.createDocument(MATHML_NAMESPACE_URI, u"math", None)
 
     logbase = doc.createElementNS(MATHML_NAMESPACE_URI, u'cn')
     logbase.appendChild( doc.createTextNode(u'10') )
@@ -327,8 +328,11 @@ Element.logbase = Qualifier('logbase', u'log')
 
 
 class MathDOM(object):
-    def __init__(self, document):
+    def __init__(self, document=None):
         self.__common_methods = METHODS_BY_ELEMENT_NAME.get(None, ())
+        if document is None:
+            dom = getDOMImplementation()
+            document = dom_impl.createDocument(MATHML_NAMESPACE_URI, u"math", None)
         self.__augmentElements(document)
         self._document = document
 
@@ -384,8 +388,18 @@ class MathDOM(object):
     def to_tree(self):
         return dom_to_tree(self._document)
 
-    def serialize(self, *args, **kwargs):
-        return serialize_dom(self._document, *args, **kwargs)
+    def serialize(self, output_format=None, converter=None, **kwargs):
+        "Serialize to 'mathml' (default) or any other supported term format."
+        if converter is None:
+            if output_format is None:
+                output_format = 'mathml'
+            if output_format == 'mathml':
+                out = StringIO()
+                Print(self._document, out)
+                return out.getvalue()
+            elif output_format == 'pmathml':
+                raise ValueError, "Presentation MathML requires XSLT."
+        return serialize_dom(self._etree, output_format, converter)
 
     if HAS_XPATH:
         def xpath(self, expression, other_namespaces=None):
@@ -400,10 +414,19 @@ class MathDOM(object):
     def toMathml(self, out=None, indent=False):
         if out is None:
             out = sys.stdout
-        if indent:
-            PrettyPrint(self._document, out)
+
+        root = self._document.lastChild
+        if root and root.localName != u'math':
+            dom = getDOMImplementation()
+            document = dom.createDocument(MATHML_NAMESPACE_URI, u"math", None)
+            document.lastChild.children[:] = [root]
         else:
-            Print(self._document, out)
+            document = self._document
+
+        if indent:
+            PrettyPrint(document, out)
+        else:
+            Print(document, out)
 
     # new DOM methods:
 
@@ -417,15 +440,7 @@ class MathDOM(object):
             function_tag.childNodes[:] = args
         return apply_tag
 
-    def createFunction(self, name, *args):
-        create_element = self._document.createElementNS
-        apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
-        function_tag = create_element(MATHML_NAMESPACE_URI, name)
-        apply_tag.appendChild(function_tag)
-        augmentElements(apply_tag)
-        if args:
-            function_tag.childNodes[:] = args
-        return apply_tag
+    createFunction = createApply
 
     def createConstant(self, value):
         create_element = self._document.createElementNS
