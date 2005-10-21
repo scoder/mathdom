@@ -404,7 +404,7 @@ Index: src/lxml/etree.pyx
      cdef xmlNode* _c_node
      cdef int _proxy_type
      
-@@ -149,78 +197,40 @@
+@@ -149,78 +197,41 @@
              return c_ns
          # create ns if existing ns cannot be found
          # try to simulate ElementTree's namespace prefix creation
@@ -480,9 +480,9 @@ Index: src/lxml/etree.pyx
          # XXX this is purely for ElementTree compatibility..
          if encoding == 'UTF-8' or encoding == 'us-ascii':
              # strip off XML prologue..
-             i = m.find('\n')
-             if i != -1:
-                 m = m[i + 1:]
+-            i = m.find('\n')
+-            if i != -1:
+-                m = m[i + 1:]
 -            # strip off ending \n..
 -            m = m[:-1]
 -        if encoding == 'UTF-8':
@@ -490,13 +490,17 @@ Index: src/lxml/etree.pyx
 -        else:
 -            file.write(funicode(m).encode(encoding))
 -        tree.xmlFree(mem)
++            if m[:5] == '<?xml':
++                i = m.find('?>')
++                if i != -1:
++                    m = m[i + 1:]
 +                if m[-1:] == '\n':
 +                    m = m[:-1]
 +        file.write(m)
              
      def getiterator(self, tag=None):
          root = self.getroot()
-@@ -250,7 +260,7 @@
+@@ -250,7 +261,7 @@
          return root.findall(path)
      
      # extensions to ElementTree API
@@ -505,7 +509,7 @@ Index: src/lxml/etree.pyx
          """XPath evaluate in context of document.
  
          namespaces is an optional dictionary with prefix to namespace URI
-@@ -265,7 +275,7 @@
+@@ -265,7 +276,7 @@
          against the same document, it is more efficient to use
          XPathEvaluator directly.
          """
@@ -514,7 +518,7 @@ Index: src/lxml/etree.pyx
  
      def xslt(self, xslt, **kw):
          """Transform this document using other document.
-@@ -322,29 +332,45 @@
+@@ -322,29 +333,45 @@
          # at all. The XInclude nodes appear to be still being in the same
          # parent and same document, but they must not be connected to the
          # tree..
@@ -567,7 +571,7 @@ Index: src/lxml/etree.pyx
      return result
  
  cdef class _Element(_NodeBase):
-@@ -410,10 +436,10 @@
+@@ -410,10 +437,10 @@
          cdef xmlNode* c_node
          cdef xmlDoc* c_doc
          c_doc = theParser.newDoc()
@@ -580,7 +584,7 @@ Index: src/lxml/etree.pyx
          
      def set(self, key, value):
          self.attrib[key] = value
-@@ -569,7 +595,7 @@
+@@ -569,7 +596,7 @@
                  result.append(_elementFactory(self._doc, c_node))
                  c = c + 1
              c_node = c_node.next
@@ -589,7 +593,7 @@ Index: src/lxml/etree.pyx
              
      def __len__(self):
          cdef int c
-@@ -643,6 +669,14 @@
+@@ -643,6 +670,14 @@
              c_node = c_node.next
          return result
  
@@ -604,7 +608,7 @@ Index: src/lxml/etree.pyx
      def getiterator(self, tag=None):
          result = []
          if tag == "*":
-@@ -659,6 +693,11 @@
+@@ -659,6 +694,11 @@
      def makeelement(self, tag, attrib):
          return Element(tag, attrib)
  
@@ -616,7 +620,7 @@ Index: src/lxml/etree.pyx
      def find(self, path):
          return _elementpath.find(self, path)
  
-@@ -668,23 +707,29 @@
+@@ -668,23 +708,29 @@
      def findall(self, path):
          return _elementpath.findall(self, path)
  
@@ -651,7 +655,7 @@ Index: src/lxml/etree.pyx
      result._c_node = c_node
      result._proxy_type = PROXY_ELEMENT
      registerProxy(result, PROXY_ELEMENT)
-@@ -731,7 +776,7 @@
+@@ -731,7 +777,7 @@
      def items(self):
          return []
      
@@ -660,7 +664,7 @@ Index: src/lxml/etree.pyx
      cdef _Comment result
      result = getProxy(c_node, PROXY_ELEMENT)
      if result is not None:
-@@ -739,7 +784,7 @@
+@@ -739,7 +785,7 @@
      if c_node is NULL:
          return None
      result = _Comment()
@@ -669,7 +673,7 @@ Index: src/lxml/etree.pyx
      result._c_node = c_node
      result._proxy_type = PROXY_ELEMENT
      registerProxy(result, PROXY_ELEMENT)
-@@ -872,13 +917,13 @@
+@@ -872,13 +918,13 @@
              result = tree.xmlGetNsProp(self._c_node, tag, ns)
          return result is not NULL
    
@@ -685,7 +689,7 @@ Index: src/lxml/etree.pyx
      result._c_node = c_node
      result._proxy_type = PROXY_ATTRIB
      registerProxy(result, PROXY_ATTRIB)
-@@ -899,14 +944,14 @@
+@@ -899,14 +945,14 @@
          registerProxy(self, PROXY_ATTRIB_ITER)
          return funicode(c_node.name)
      
@@ -702,7 +706,7 @@ Index: src/lxml/etree.pyx
      result._c_node = c_node
      result._proxy_type = PROXY_ATTRIB_ITER
      registerProxy(result, PROXY_ATTRIB_ITER)
-@@ -927,14 +972,14 @@
+@@ -927,14 +973,14 @@
          registerProxy(self, PROXY_ELEMENT_ITER)
          return _elementFactory(self._doc, c_node)
  
@@ -719,7 +723,7 @@ Index: src/lxml/etree.pyx
      result._c_node = c_node
      result._proxy_type = PROXY_ELEMENT_ITER
      registerProxy(result, PROXY_ELEMENT_ITER)
-@@ -959,31 +1004,66 @@
+@@ -959,31 +1005,66 @@
      c_node = tree.xmlNewDocComment(c_doc, text)
      return c_node
  
@@ -799,7 +803,7 @@ Index: src/lxml/etree.pyx
  
  def SubElement(_Element parent, tag, attrib=None, nsmap=None, **extra):
      cdef xmlNode* c_node
-@@ -998,13 +1078,17 @@
+@@ -998,13 +1079,17 @@
      return element
  
  def ElementTree(_Element element=None, file=None):
@@ -820,7 +824,7 @@ Index: src/lxml/etree.pyx
          if isinstance(file, str) or isinstance(file, unicode):
              f = open(file, 'r')
              data = f.read()
-@@ -1012,18 +1096,20 @@
+@@ -1012,18 +1097,20 @@
          else:
              # XXX read XML into memory not the fastest way to do this
              data = file.read()
@@ -850,7 +854,7 @@ Index: src/lxml/etree.pyx
      
      return etree
  
-@@ -1032,7 +1118,7 @@
+@@ -1032,7 +1119,7 @@
      if isinstance(text, unicode):
          text = text.encode('UTF-8')
      c_doc = theParser.parseDoc(text)
@@ -859,7 +863,7 @@ Index: src/lxml/etree.pyx
  
  fromstring = XML
  
-@@ -1044,7 +1130,7 @@
+@@ -1044,7 +1131,7 @@
      _dumpToFile(sys.stdout, elem._doc._c_doc, elem._c_node)
  
  def tostring(_NodeBase element, encoding='us-ascii'):
@@ -868,7 +872,7 @@ Index: src/lxml/etree.pyx
      cdef tree.xmlOutputBuffer* c_buffer
      cdef tree.xmlCharEncodingHandler* enchandler
      cdef char* enc
-@@ -1056,10 +1142,6 @@
+@@ -1056,10 +1143,6 @@
      if encoding in ('utf8', 'UTF8', 'utf-8'):
          encoding = 'UTF-8'
      doc = element._doc
@@ -879,7 +883,7 @@ Index: src/lxml/etree.pyx
      enc = encoding
      # it is necessary to *and* find the encoding handler *and* use
      # encoding during output
-@@ -1079,10 +1161,9 @@
+@@ -1079,10 +1162,9 @@
  def parse(source, parser=None):
      """Return an ElementTree object loaded with source elements
      """
@@ -893,7 +897,7 @@ Index: src/lxml/etree.pyx
  
  cdef _addNamespaces(xmlDoc* c_doc, xmlNode* c_node, object nsmap):
      cdef xmlNs* c_ns
-@@ -1097,22 +1178,113 @@
+@@ -1097,22 +1179,113 @@
              else:
                  tree.xmlNewNs(c_node, href, NULL)
          
@@ -1014,7 +1018,7 @@ Index: src/lxml/etree.pyx
          
          xpathCtxt = xpath.xmlXPathNewContext(doc._c_doc)
          if xpathCtxt is NULL:
-@@ -1122,40 +1294,21 @@
+@@ -1122,40 +1295,21 @@
          self._doc = doc
          self._c_ctxt = xpathCtxt
          self._c_ctxt.userData = <void*>self
@@ -1060,7 +1064,7 @@ Index: src/lxml/etree.pyx
  
      def registerNamespaces(self, namespaces):
          """Register a prefix -> uri dict.
-@@ -1163,36 +1316,31 @@
+@@ -1163,36 +1317,31 @@
          for prefix, uri in namespaces.items():
              self.registerNamespace(prefix, uri)
      
@@ -1115,7 +1119,7 @@ Index: src/lxml/etree.pyx
          
      #def clone(self):
      #    # XXX pretty expensive so calling this from callback is probably
-@@ -1233,14 +1381,17 @@
+@@ -1233,14 +1382,17 @@
              self, element._doc, namespaces, extensions)
          self._element = element
          
@@ -1139,7 +1143,7 @@ Index: src/lxml/etree.pyx
      
  def Extension(module, function_mapping, ns_uri=None):
      result = {}
-@@ -1248,6 +1399,59 @@
+@@ -1248,6 +1400,59 @@
          result[(ns_uri, xpath_name)] = getattr(module, function_name)
      return result
  
@@ -1199,7 +1203,7 @@ Index: src/lxml/etree.pyx
  cdef xpath.xmlXPathObject* _wrapXPathObject(object obj) except NULL:
      cdef xpath.xmlNodeSet* resultSet
      cdef _NodeBase node
-@@ -1277,7 +1481,7 @@
+@@ -1277,7 +1482,7 @@
      return NULL
  
  cdef object _unwrapXPathObject(xpath.xmlXPathObject* xpathObj,
@@ -1208,7 +1212,7 @@ Index: src/lxml/etree.pyx
      if xpathObj.type == xpath.XPATH_UNDEFINED:
          raise XPathResultError, "Undefined xpath result"
      elif xpathObj.type == xpath.XPATH_NODESET:
-@@ -1301,7 +1505,7 @@
+@@ -1301,7 +1506,7 @@
      else:
          raise XPathResultError, "Unknown xpath result %s" % str(xpathObj.type)
  
@@ -1217,7 +1221,7 @@ Index: src/lxml/etree.pyx
                                   xpath.xmlXPathObject* xpathObj):
      cdef xmlNode* c_node
      cdef char* s
-@@ -1334,7 +1538,7 @@
+@@ -1334,7 +1539,7 @@
  
  cdef void _xpathCallback(xpath.xmlXPathParserContext* ctxt, int nargs):
      cdef xpath.xmlXPathContext* rctxt
@@ -1226,7 +1230,7 @@ Index: src/lxml/etree.pyx
      cdef xpath.xmlXPathObject* obj
      cdef XPathDocumentEvaluator evaluator
      
-@@ -1380,11 +1584,13 @@
+@@ -1380,11 +1585,13 @@
      """
      cdef xslt.xsltStylesheet* _c_style
      
@@ -1241,7 +1245,7 @@ Index: src/lxml/etree.pyx
          c_doc = tree.xmlCopyDoc(doc._c_doc, 1)
          # XXX work around bug in xmlCopyDoc (fix is upcoming in new release
          # of libxml2)
-@@ -1401,11 +1607,13 @@
+@@ -1401,11 +1608,13 @@
          # this cleans up copy of doc as well
          xslt.xsltFreeStylesheet(self._c_style)
          
@@ -1256,7 +1260,7 @@ Index: src/lxml/etree.pyx
          if kw:
              # encode as UTF-8; somehow can't put this in main params
              # array construction loop..
-@@ -1436,14 +1644,17 @@
+@@ -1436,14 +1645,17 @@
          # XXX should set special flag to indicate this is XSLT result
          # so that xsltSaveResultTo* functional can be used during
          # serialize?
@@ -1276,7 +1280,7 @@ Index: src/lxml/etree.pyx
          r = xslt.xsltSaveResultToString(&s, &l, doc._c_doc, self._c_style)
          if r == -1:
              raise XSLTSaveError, "Error saving stylesheet result to string"
-@@ -1457,11 +1668,12 @@
+@@ -1457,11 +1669,12 @@
      """
      cdef relaxng.xmlRelaxNG* _c_schema
      
@@ -1293,7 +1297,7 @@ Index: src/lxml/etree.pyx
          elif file is not None:
              filename = _getFilenameForFile(file)
              if filename is None:
-@@ -1481,12 +1693,14 @@
+@@ -1481,12 +1694,14 @@
      def __dealloc__(self):
          relaxng.xmlRelaxNGFree(self._c_schema)
          
@@ -1309,7 +1313,7 @@ Index: src/lxml/etree.pyx
          valid_ctxt = relaxng.xmlRelaxNGNewValidCtxt(self._c_schema)
          ret = relaxng.xmlRelaxNGValidateDoc(valid_ctxt, doc._c_doc)
          relaxng.xmlRelaxNGFreeValidCtxt(valid_ctxt)
-@@ -1499,9 +1713,11 @@
+@@ -1499,27 +1714,31 @@
      """
      cdef xmlschema.xmlSchema* _c_schema
      
@@ -1321,9 +1325,15 @@ Index: src/lxml/etree.pyx
 +        doc = etree._doc
 +        parser_ctxt = xmlschema.xmlSchemaNewDocParserCtxt(doc._c_doc)
          if parser_ctxt is NULL:
-             raise XMLSchemaParseError, "Document is not valid XML Schema"
+-            raise XMLSchemaParseError, "Document is not valid XML Schema"
++            raise XMLSchemaParseError, "Document is accepted as XML Schema"
          self._c_schema = xmlschema.xmlSchemaParse(parser_ctxt)
-@@ -1513,13 +1729,15 @@
+         if self._c_schema is NULL:
+             xmlschema.xmlSchemaFreeParserCtxt(parser_ctxt)
+-            raise XMLSchemaParseError, "Document is not valid XML Schema"
++            raise XMLSchemaParseError, "Document is not parsable as XML Schema"
+         xmlschema.xmlSchemaFreeParserCtxt(parser_ctxt)
+         
      def __dealloc__(self):
          xmlschema.xmlSchemaFree(self._c_schema)
  
@@ -1340,7 +1350,7 @@ Index: src/lxml/etree.pyx
          valid_ctxt = xmlschema.xmlSchemaNewValidCtxt(self._c_schema)
          ret = xmlschema.xmlSchemaValidateDoc(valid_ctxt, doc._c_doc)
          xmlschema.xmlSchemaFreeValidCtxt(valid_ctxt)
-@@ -1643,7 +1861,164 @@
+@@ -1643,7 +1862,164 @@
  cdef Parser theParser
  theParser = Parser()
  
@@ -1505,7 +1515,7 @@ Index: src/lxml/etree.pyx
  cdef _dumpToFile(f, xmlDoc* c_doc, xmlNode* c_node):
      cdef tree.PyObject* o
      cdef tree.xmlOutputBuffer* c_buffer
-@@ -1940,7 +2315,7 @@
+@@ -1940,7 +2316,7 @@
  
  
  cdef void changeDocumentBelow(_NodeBase node,
@@ -1514,7 +1524,7 @@ Index: src/lxml/etree.pyx
      """For a node and all nodes below, change document.
  
      A node can change document in certain operations as an XML
-@@ -1952,7 +2327,7 @@
+@@ -1952,7 +2328,7 @@
      tree.xmlReconciliateNs(doc._c_doc, node._c_node)
      
  cdef void changeDocumentBelowHelper(xmlNode* c_node,
