@@ -1,8 +1,12 @@
 from distutils.core import setup
 setup(
     name='mathdom',
-    version='0.5.4',
+    version='0.6.0',
     packages=['mathml', 'mathml.utils'],
+    package_data = {
+    'mathml'       : ['schema/mathml2.rng.gz'],
+    'mathml.utils' : ['mmlctop.xsl']
+    },
 
     description='MathDOM - Content MathML in Python',
     long_description="""MathDOM - Content MathML in Python
@@ -30,6 +34,14 @@ you need a different representation, add a converter, but don't change
 the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
+
+New in version 0.6:
+
+- RelaxNG validation
+- Presentation MathML export (based on XSLT)
+- stricter spec conformance (encloses MathML output in <math> tag
+
+The first two require lxml, PyXML does not support them.
 """,
 
     author='Stefan Behnel',
@@ -38,7 +50,7 @@ SQL/Java/Lisp/*your-favourite* easy.
     download_url='http://www.sourceforge.net/projects/mathdom',
 
     classifiers = [
-    'Development Status :: 3 - Alpha',
+    'Development Status :: 4 - Beta',
     'Intended Audience :: Developers',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
@@ -47,5 +59,5 @@ SQL/Java/Lisp/*your-favourite* easy.
     'Topic :: Scientific/Engineering :: Mathematics',
     ],
 
-    keywords = "MathML xml DOM math parser"
+    keywords = "MathML xml DOM math parser validator"
     )

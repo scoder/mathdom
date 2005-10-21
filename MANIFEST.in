@@ -1,4 +1,5 @@
-include setup.py README LICENSE ChangeLog lxml.patch
+include setup.py MANIFEST.in README LICENSE ChangeLog lxml.patch
+include mathml/schema/mathml2.rng.gz mathml/utils/mmlctop.xsl
 recursive-include test *.py
 recursive-include mathml *.py
 recursive-include examples *.py
