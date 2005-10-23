@@ -13,7 +13,6 @@
 </head>
 
 
-
 <body style="direction: ltr;">
 
 <img style="width: 77px; height: 141px; margin-right: 10px; margin-bottom: 5px; float: left;" src="logo.png" alt="MathDOM logo" align="left" />
@@ -50,7 +49,8 @@ The DOM elements are enhanced by domain specific methods that make
 using the DOM a little easier.<br />
 
 Version 0.6 features an XSLT-based output filter for <a href="http://www.w3.org/TR/MathML2/chapter3.html">Presentational
-MathML</a> and <a href="http://relaxng.org/tutorial.html">RelaxNG</a>-based document validation. Both are based on lxml.<br />
+MathML</a> and <a href="http://relaxng.org/tutorial.html">RelaxNG</a>-based
+document validation. Both are based on lxml.<br />
 
 </p>
 
@@ -68,15 +68,104 @@ C/Fortran/SQL/yourfavourite easier.</p>
 
 <h2>A quick example</h2>
 
-<pre><span class="code_default"><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_word">from</span><span class="p_default"> </span><span class="p_identifier">mathml</span><span class="p_operator">.</span><span class="p_identifier">lmathdom</span><span class="p_default"> </span><span class="p_word">import</span><span class="p_default"> </span><span class="p_identifier">MathDOM</span><span class="p_default"> </span><span class="p_commentline"># use lxml implementation</span><span class="p_default"><br /></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_default"> </span><span class="p_operator">=</span><span class="p_default"> </span><span class="p_identifier">MathDOM</span><span class="p_operator">.</span><span class="p_identifier">fromString</span><span class="p_operator">(</span><span class="p_string">"+2^x+4*-5i/6"</span><span class="p_operator">,</span><span class="p_default"> </span><span class="p_string">"infix_term"</span><span class="p_operator">)</span><span class="p_default"> </span><span class="p_commentline"># parse infix term</span><span class="p_default"><br /></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_word">for</span><span class="p_default"> </span><span class="p_identifier">apply_tag</span><span class="p_default"> </span><span class="p_word">in</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_operator">.</span><span class="p_identifier">xpath</span><span class="p_operator">(</span><span class="p_character">u'//math:apply[math:plus]'</span><span class="p_operator">):</span><span class="p_default"> </span><span class="p_commentline"># replace '+' with '-'</span><span class="p_default"><br /></span><span class="p_operator">...</span><span class="p_default"> </span><span class="p_identifier">apply_tag</span><span class="p_operator">.</span><span class="p_identifier">set_operator</span><span class="p_operator">(</span><span class="p_character">u'minus'</span><span class="p_operator">)</span><span class="p_default"><br /></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_operator">[</span><span class="p_default"> </span><span class="p_identifier">n</span><span class="p_operator">.</span><span class="p_identifier">value</span><span class="p_operator">()</span><span class="p_default"> </span><span class="p_word">for</span><span class="p_default"> </span><span class="p_identifier">n</span><span class="p_default"> </span><span class="p_word">in</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_operator">.</span><span class="p_identifier">xpath</span><span class="p_operator">(</span><span class="p_character">u'//math:cn'</span><span class="p_operator">)</span><span class="p_default"> </span><span class="p_operator">]</span><span class="p_default"> </span><span class="p_commentline"># find numbers</span><span class="p_default"><br /></span><span class="p_operator">[</span><span class="p_number">2</span><span class="p_operator">,</span><span class="p_default"> </span><span class="p_number">4</span><span class="p_operator">,</span><span class="p_default"> </span><span class="p_number">Complex(0-5j)</span><span class="p_operator">,</span><span class="p_default"> </span><span class="p_number">6</span><span class="p_operator">]</span><span class="p_default"><br /></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_word">from</span><span class="p_default"> </span><span class="p_identifier">mathml</span><span class="p_operator">.</span><span class="p_identifier">utils</span><span class="p_default"> </span><span class="p_word">import</span><span class="p_default"> </span><span class="p_identifier">pyterm</span><span class="p_default"> </span><span class="p_commentline"># register Python term builder</span><span class="p_default"><br /></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_operator">.</span><span class="p_identifier">serialize</span><span class="p_operator">(</span><span class="p_string">"python"</span><span class="p_operator">)</span><span class="p_default"> </span><span class="p_commentline"># serialize to Python term</span><span class="p_default"><br /></span><span class="p_character">u'2 ** x - 4 * (-5j) / 6'</span></span>
-</pre>
+<table class="code_default" border="0" cellpadding="0" cellspacing="3">
+
+  <tbody>
+
+    <tr>
+
+      <td><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_word">from</span><span class="p_default"> </span><span class="p_identifier">mathml</span><span class="p_operator">.</span><span class="p_identifier">lmathdom</span><span class="p_default"> </span><span class="p_word">import</span><span class="p_default"> </span><span class="p_identifier">MathDOM</span><span class="p_default"> </span></td>
+
+      <td class="p_commentline"># use lxml
+implementation</td>
+
+    </tr>
+
+    <tr>
+
+      <td><span class="p_default"></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_default"> </span><span class="p_operator">=</span><span class="p_default"> </span><span class="p_identifier">MathDOM</span><span class="p_operator">.</span><span class="p_identifier">fromString</span><span class="p_operator">(</span><span class="p_string">"+2^x+4*-5i/6"</span><span class="p_operator">,</span><span class="p_string">"infix_term"</span><span class="p_operator">)</span></td>
+
+      <td class="p_commentline"># parse infix
+term</td>
+
+    </tr>
+
+    <tr>
+
+      <td><span class="p_default"></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_word">for</span><span class="p_default"> </span><span class="p_identifier">apply_tag</span><span class="p_default"> </span><span class="p_word">in</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_operator">.</span><span class="p_identifier">xpath</span><span class="p_operator">(</span><span class="p_character">u'//math:apply[math:plus]'</span><span class="p_operator">):</span></td>
+
+      <td class="p_commentline"># replace '+'
+with '-'</td>
+
+    </tr>
+
+    <tr>
+
+      <td><span class="p_operator">...</span><span class="p_default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="p_identifier">apply_tag</span><span class="p_operator">.</span><span class="p_identifier">set_operator</span><span class="p_operator">(</span><span class="p_character">u'minus'</span><span class="p_operator">)</span></td>
+
+      <td> </td>
+
+    </tr>
+
+    <tr>
+
+      <td><span class="p_default"></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_operator">[</span><span class="p_default"> </span><span class="p_identifier">n</span><span class="p_operator">.</span><span class="p_identifier">value</span><span class="p_operator">()</span><span class="p_default">
+      </span><span class="p_word">for</span><span class="p_default"> </span><span class="p_identifier">n</span><span class="p_default">
+      </span><span class="p_word">in</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_operator">.</span><span class="p_identifier">xpath</span><span class="p_operator">(</span><span class="p_character">u'//math:cn'</span><span class="p_operator">)</span><span class="p_default">
+      </span><span class="p_operator">]</span></td>
+
+      <td class="p_commentline"># find numbers</td>
+
+    </tr>
+
+    <tr>
+
+      <td><span class="p_operator">[</span><span class="p_number">2</span><span class="p_operator">,</span><span class="p_default"> </span><span class="p_number">4</span><span class="p_operator">,</span><span class="p_default">
+      </span><span class="p_number">Complex(0-5j)</span><span class="p_operator">,</span><span class="p_default">
+      </span><span class="p_number">6</span><span class="p_operator">]</span></td>
+
+      <td> </td>
+
+    </tr>
+
+    <tr>
+
+      <td><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_word">from</span><span class="p_default"> </span><span class="p_identifier">mathml</span><span class="p_operator">.</span><span class="p_identifier">utils</span><span class="p_default"> </span><span class="p_word">import</span><span class="p_default"> </span><span class="p_identifier">pyterm</span></td>
+
+      <td class="p_commentline"># register Python term
+builder</td>
+
+    </tr>
+
+    <tr>
+
+      <td><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_operator">.</span><span class="p_identifier">serialize</span><span class="p_operator">(</span><span class="p_string">"python"</span><span class="p_operator">)</span></td>
+
+      <td class="p_commentline"># serialize to
+Python term</td>
+
+    </tr>
+
+    <tr>
+
+      <td><span class="p_character">u'2 ** x - 4 *
+(-5j) / 6'</span></td>
+
+      <td> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+<br />
 
 Simple, isn't it ?
 <h2>Why PyXML <span style="font-style: italic;">and</span>
 lxml?</h2>
 
 While basic XML support is part of the Python distribution, PyXML
-extends it to a mostly DOM Level-2 complient API written
+extends it to a largely DOM Level-2 complient API written
 in pure Python. This implementation does, however, have the
 disadvantage of being rather slow and very, very un-pythonic. Apart
 from DOM, SAX and XPath, it supports none of the other important
