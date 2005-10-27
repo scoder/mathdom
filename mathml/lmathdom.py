@@ -24,7 +24,7 @@ TYPE_MAP = {
 STYLESHEET_MAPPING = {
     'mathmlc2p.xsl' : ('mathml',   'pmathml'),
     'ctop.xsl'      : ('mathml',   'pmathml2'),
-    'pMML2SVG.xsl'  : ('pmathml2', 'svg')
+    'pMML2SVG.xsl'  : ('pmathml',  'svg')
     }
 
 STYLESHEET_TRANSFORMERS = {}
