@@ -123,11 +123,14 @@ mathml/utils/sax_pmathml.py
                        - PyMathML [6] integration through the SAX interface
 
 
-* PyMathML [6] is included in "mathml/pmathml". PyMathML is a
+* PyMathML [6] is in "mathml/pmathml/"
+
+  For convenience, PyMathML [6] is included in MathDOM. PyMathML is a
   renderer for Presentational MathML, districuted under the terms of
   the LGPL (if you can't accept that, don't use it!). For questions
-  regarding PyMathML, please contact the PyMathML project at
-  SourceForge.
+  regarding PyMathML, please contact the PyMathML project at SourceForge.
+  I do not maintain that package!
+  If you want to use PyMathML with MathDOM, try mathml/utils/sax_pmathml.py
 
 
 References
