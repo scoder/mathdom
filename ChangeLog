@@ -1,3 +1,71 @@
+2005-10-27  scoder  <scoder@toaster>
+
+	* README: more on mathml/utils, PyMathML integration
+
+	* lxml.patch: new lxml patch
+
+	* mathml/lmathdom.py, mathml/utils/ctop.xsl, mathml/utils/mathmlc2p.xsl, mathml/utils/mmlctop.xsl, mathml/utils/sax_pmathml.py, mathml/xmlterm.py, setup.py, test/test.py:
+	more generic integration of XSLT scripts, replaced c2p XSLT by two new scripts
+
+2005-10-23  scoder  <scoder@toaster>
+
+	* html/MathDOM.html, html/codestyle.css: use table in code layout
+
+	* html/project-support.png, html/project-support.xcf: support button
+
+	* html/MathDOM.html, html/codestyle.css:
+	add logos in script, switch to XHTML/nvu
+
+	* html/copy.sh: add logos in script
+
+2005-10-21  scoder  <scoder@toaster>
+
+	* html/MathDOM.html: set download link for lxml patch
+
+	* ChangeLog, setup.py: start work on 0.6.1
+
+	* lxml.patch: new lxml patch
+
+	* lxml.patch: updated patch
+
+	* ChangeLog: 0.6.0
+
+	* html/MathDOM.html: mention v0.6 features
+
+	* MANIFEST.in, setup.py:
+	0.6.0: RelaxNG validation + XSLT-based Presentation MathML export
+
+	* test/test.py, mathml/__init__.py, mathml/lmathdom.py, mathml/mathdom.py, mathml/xmlterm.py:
+	add and test RNG validation, always output 'math' root tag, make MathDOM.serialize() support mathml and pmathml output
+
+	* mathml/utils/mmlctop.xsl: MathML c2p converter script
+
+	* mathml/schema/mathml2-qname-1.mod.rng, mathml/schema/mathml2.rng, mathml/schema/mathml2.rng.gz:
+	Gzipped RelaxNG schemas for MathML
+
+	* mathml/schema/mathml2-qname-1.mod.rng, mathml/schema/mathml2.rng:
+	RelaxNG schemas for MathML
+
+	* test/test.py: test XSLT, serialize
+
+	* ChangeLog: updated 0.5.4
+
+	* test/test.py: better tests
+
+	* mathml/__init__.py, mathml/lmathdom.py, mathml/mathdom.py:
+	move MathML constant definitions into top-level module
+
+	* html/MathDOM.html: typo
+
+	* ChangeLog: 0.5.4
+
+	* README: more on lxml
+
+	* MANIFEST.in, README, lxml+custom_classes+saxify.patch, lxml.patch:
+	new lxml patch (renamed to lxml.patch)
+
+	* mathml/lmathdom.py, setup.py: adapt to new lxml patches
+
 2005-10-21  scoder  <scoder@toaster>
 
 	* setup.py: 0.6.1
