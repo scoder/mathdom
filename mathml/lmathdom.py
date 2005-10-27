@@ -6,7 +6,7 @@ import sys
 from itertools import chain
 from StringIO  import StringIO
 
-from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
+from lxml.etree import (parse, tostring, ElementBase, Element, SubElement, ElementTree,
                         register_namespace_classes, XSLT, XMLSchema, RelaxNG)
 from lxml.TreeBuilder import SaxTreeBuilder
 
@@ -21,20 +21,50 @@ TYPE_MAP = {
     'e-notation' : ENotation
     }
 
-# try to read XSL stylesheet for Content -> Presentation conversion
-MML_CTOP = None
+STYLESHEET_MAPPING = {
+    'mathmlc2p.xsl' : ('mathml',   'pmathml'),
+    'ctop.xsl'      : ('mathml',   'pmathml2'),
+    'pMML2SVG.xsl'  : ('pmathml2', 'svg')
+    }
+
+STYLESHEET_TRANSFORMERS = {}
+
+# try to read XSL stylesheets
+STYLESHEETS = {}
 xslt_filename = None
-try:
-    from os import path
-    xslt_filename = path.abspath( path.join(path.dirname(__file__), 'utils', 'mmlctop.xsl') )
-    del path
-    MML_CTOP = XSLT( parse(xslt_filename) )
-except IOError:
-    pass
-except Exception, e:
-    print e
-    pass
-del xslt_filename
+from os import path
+for xsl_file, (input_type, output_type) in STYLESHEET_MAPPING.iteritems():
+    try:
+        xslt_filename = path.abspath( path.join(path.dirname(__file__), 'utils', xsl_file) )
+        STYLESHEETS[output_type] = (input_type, XSLT( parse(xslt_filename) ))
+    except IOError: # file not found => not available
+        pass
+    except Exception, e:
+        print "Error loading stylesheet %s:" % xsl_file, e
+        pass
+
+xslt = None
+l = len(STYLESHEETS) + 1
+while l > len(STYLESHEETS):
+    l = len(STYLESHEETS)
+    for output_type, (input_type, xslt) in STYLESHEETS.items():
+        if input_type != 'mathml' and input_type not in STYLESHEETS:
+            del STYLESHEETS[output_type]
+
+xslts = None
+for output_type, (input_type, xslt) in STYLESHEETS.items():
+    STYLESHEET_TRANSFORMERS[output_type] = xslts = []
+    input_type = None
+    while input_type != 'mathml':
+        try:
+            input_type, xslt = STYLESHEETS[output_type]
+        except KeyError:
+            raise ValueError, "Unsupported output format %s, please install appropriate stylesheets" % _output_format
+        xslts.insert(0, xslt)
+        output_type = input_type
+
+del STYLESHEETS, l, xslt, xslts, xslt_filename, xsl_file, input_type, output_type, path # clean up
+
 
 # try to read XML Schema for MathML validation (doesn't currently work because of libxml2)
 MML_SCHEMA = None
@@ -188,17 +218,26 @@ class SerializableMathElement(MathElement):
     def serialize(self, *args, **kwargs):
         return serialize_dom(self, *args, **kwargs)
 
-    if MML_CTOP:
-        def to_pres(self, keep_semantics=True, all_semantics=True):
+    if 'pmathml' in STYLESHEET_TRANSFORMERS:
+        def to_pmathml(self):
             """Returns an ElementTree containing a Presentational
             MathML representation of this document."""
-            if all_semantics:
-                semantics = "SEM_ALL"
-            elif keep_semantics:
-                semantics = "SEM_PASS"
-            else:
-                semantics = "SEM_STRIP"
-            return MML_CTOP.apply(ElementTree(self))
+            return self.xsltify('pmathml')
+        to_pres = to_pmathml
+    elif 'pmathml2' in STYLESHEET_TRANSFORMERS:
+        def to_pmathml(self):
+            """Returns an ElementTree containing a Presentational
+            MathML representation of this document."""
+            return self.xsltify('pmathml2')
+        to_pres = to_pmathml
+
+    if STYLESHEET_TRANSFORMERS:
+        def xsltify(self, _output_format, **kwargs):
+            xslts = STYLESHEET_TRANSFORMERS[_output_format]
+            root = ElementTree(self)
+            for xslt in xslts:
+                root = xslt.apply(root, **kwargs)
+            return root
 
 class math_math(SerializableMathElement):
     IMPLEMENTS = u'math'
@@ -406,15 +445,18 @@ class MathDOM(object):
         #if indent: ??
         self._etree.write(out, 'UTF-8')
 
-    if MML_CTOP:
-        def to_pres(self, *args, **kwargs):
+    if 'pmathml' in STYLESHEET_TRANSFORMERS or 'pmathml2' in STYLESHEET_TRANSFORMERS:
+        def to_pmathml(self, *args, **kwargs):
             """Returns an ElementTree containing a Presentational
             MathML representation of this document."""
             root = self._etree.getroot()
-            try:
-                return root.to_pres(*args, **kwargs)
-            except AttributeError:
-                return None
+            return root.to_pmathml(*args, **kwargs)
+        to_pres = to_pmathml
+
+    if STYLESHEET_TRANSFORMERS:
+        def xsltify(self, _output_format, **kwargs):
+            root = self._etree.getroot()
+            return root.xsltify(_output_format, **kwargs)
 
     if MML_SCHEMA:
         def validate(self):
@@ -436,10 +478,8 @@ class MathDOM(object):
                 out = StringIO()
                 self.toMathml(out, False)
                 return out.getvalue()
-            elif output_format == 'pmathml':
-                if not hasattr(self, 'to_pres'):
-                    raise ValueError, "Presentation MathML requires XSL script installed."
-                etree = self.to_pres(**kwargs)
+            elif output_format in STYLESHEET_TRANSFORMERS:
+                etree = self.xsltify(output_format, **kwargs)
                 out = StringIO()
                 etree.write(out, 'UTF-8')
                 return out.getvalue()

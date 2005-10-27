@@ -2,10 +2,10 @@ from distutils.core import setup
 setup(
     name='mathdom',
     version='0.6.1',
-    packages=['mathml', 'mathml.utils'],
+    packages=['mathml', 'mathml.utils', 'mathml.pmathml'],
     package_data = {
     'mathml'       : ['schema/mathml2.rng.gz'],
-    'mathml.utils' : ['mmlctop.xsl']
+    'mathml.utils' : ['mathmlc2p.xsl', 'ctop.xsl']
     },
 
     description='MathDOM - Content MathML in Python',
@@ -20,10 +20,11 @@ make using the DOM a little easier. Implementations based on PyXML and
 lxml/libxml2 are available.
 
 .. _lxml:                  http://codespeak.net/lxml/
-.. _pyparsing:             http://pyparsing.sourceforge.net
-.. _PyXML:                 http://pyxml.sourceforge.net
+.. _pyparsing:             http://pyparsing.sourceforge.net/
+.. _PyXML:                 http://pyxml.sourceforge.net/
 .. _`Content MathML`:      http://www.w3.org/TR/MathML2/chapter4.html
 .. _MathML:                http://www.w3.org/TR/MathML2/
+.. _PyMathML:              http://pymathml.sourceforge.net/
 
 You can call it the shortest way between different term
 representations and a Content MathML DOM. Ever noticed the annoying
@@ -34,6 +35,11 @@ you need a different representation, add a converter, but don't change
 the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
+
+New in version 0.6.1:
+
+- integration of the PyMathML_ renderer (untested!)
+- more generic integration of XSLT scripts
 
 New in version 0.6:
 

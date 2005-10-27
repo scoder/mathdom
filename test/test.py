@@ -3,6 +3,7 @@ sys.path.insert(0, '..')
 
 import unittest
 from itertools import count, chain, starmap
+from StringIO import StringIO
 
 from mathml.termparser   import term_parsers
 from mathml.termbuilder  import tree_converters
@@ -85,8 +86,8 @@ def dom_test(term, term_type, mathdom):
 ###
 
 def build_test_class(term_type, mathdom):
-    class_name = term_type
     impl_name  = mathdom.__module__.rsplit('.', 1)[-1]
+    class_name = impl_name + '_' + term_type
 
     def docstr(test_name, term):
         return "%-8s - %-9s - %s: %s" % (impl_name, test_name, class_name.replace('_', ' '), term)
@@ -120,14 +121,16 @@ def build_test_class(term_type, mathdom):
         test.__doc__ = docstr("dom_work", term)
         return test
 
-    def build_output_test(term, method_name):
-        if not hasattr(mathdom, method_name):
-            return None
+    def build_output_test(term, output_type):
         def test(self):
             doc = mathdom.fromString(term, term_type)
-            result = getattr(doc, method_name)()
-            self.assert_(result, result)
-        test.__doc__ = docstr(method_name, term)
+            result = doc.serialize(output_type)
+            if hasattr(result, 'write'):
+                xml_out = StringIO()
+                result.write(xml_out, 'UTF-8')
+                result = xml_out.getvalue()
+            self.assert_(result, type(result))
+        test.__doc__ = docstr(output_type, term)
         return test
 
     def build_validate_test(term):
@@ -154,9 +157,14 @@ def build_test_class(term_type, mathdom):
         for i, term in enumerate(sorted(terms.iterkeys()))
         )
 
+    output_types = {
+        'mathdom'  : ['mathml'],
+        'lmathdom' : ['pmathml', 'pmathml2', 'mathml']
+        }[impl_name]
+
     tests.update(
-        (test_name(), build_output_test(term, method_name))
-        for m, method_name in enumerate(['to_pres', 'to_tree', 'serialize'])
+        (test_name(), build_output_test(term, output_type))
+        for m, output_type in enumerate(output_types)
         for i, term in enumerate(sorted(terms.iterkeys()))
         )
 

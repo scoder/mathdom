@@ -127,6 +127,8 @@ def serialize_dom(doc_or_element, output_format=None, converter=None):
         output_format = 'infix'
     if converter is None:
         converter = tree_converters.fortype(output_format)
+        if converter is None:
+            raise ValueError, "Unsupported output format '%s'" % output_format
     tree = dom_to_tree(doc_or_element)
     return converter.build(tree)
 
