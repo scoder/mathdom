@@ -29,8 +29,8 @@ top of libxml2 [5]. That makes it much faster than the pure Python
 implementation (just try test/test.py) and it supports more XML
 features, like XSLT and XInclude. Please apply the patch that comes
 with MathDOM if you want to use lxml. The patch should apply to
-version 0.7 or newer SVN versions of lxml. Not tested with 0.8 which
-may include parts of the patch.
+version 0.7 or newer SVN versions of lxml. The patch has been
+submitted for inclusion in lxml.
 
 
 A quick example:
@@ -78,48 +78,67 @@ The files:
 
 * Installation:
 
-setup.py           - distutils, try "python setup.py install"
+setup.py               - distutils, try "python setup.py install"
 
 
 * Patching lxml:
 
-lxml.patch - apply in the lxml source directory (using -p0).
+lxml.patch             - apply in the lxml source directory (using -p0).
 
 
 * Examples are in "examples/":
 
-examples/infix.py  - example program: read a term, write out MathML,
-                     infix, prefix, postfix representations
-                     -> START HERE if you want to figure out how
-                     everything works.
+examples/infix.py      - example program: read a term, write out MathML,
+                         infix, prefix, postfix representations
+                         -> START HERE if you want to figure out how
+                         everything works.
 
-examples/dom.py    - example program: read a term, do some DOM stuff
+examples/dom.py        - example program: read a term, do some DOM stuff
 
-examples/ldom.py   - example program: read a term, do some lxml/xpath stuff
+examples/ldom.py       - example program: read a term, do some lxml/xpath stuff
 
 
 * The actual package source is in "mathml/":
 
-src/mathdom.py     - the DOM implemention
+mathml/mathdom.py      - the DOM implemention
 
-src/lmathdom.py    - the lxml implemention
+mathml/lmathdom.py     - the lxml implemention (supports XSLT, RelaxNG, etc.)
 
-src/xmlterm.py     - SAX generator for the termparser AST
+mathml/xmlterm.py      - SAX generator for the termparser AST
 
-src/termparser.py  - parser for literal infix terms
+mathml/termparser.py   - parser for literal infix terms
 
-src/termbuilder.py - serializer for literal terms,
-                     framework for output converters
+mathml/termbuilder.py  - serializer for literal terms,
+                         framework for output converters
+
+
+* Extensions are in "mathml/utils/":
+
+mathml/utils/pyterm.py - a Python term serializer
+
+mathml/utils/mathmlc2p.xsl
+mathml/utils/ctop.xsl  - XSLT converters: Content MathML -> Presentation MathML
+
+mathml/utils/sax_pmathml.py
+                       - PyMathML [6] integration through the SAX interface
+
+
+* PyMathML [6] is included in "mathml/pmathml". PyMathML is a
+  renderer for Presentational MathML, districuted under the terms of
+  the LGPL (if you can't accept that, don't use it!). For questions
+  regarding PyMathML, please contact the PyMathML project at
+  SourceForge.
 
 
 References
 ----------
 
-[1] pyparsing:   http://pyparsing.sf.net
-[2] PyXML:       http://pyxml.sf.net
+[1] pyparsing:   http://pyparsing.sf.net/
+[2] PyXML:       http://pyxml.sf.net/
 [3] lxml:        http://codespeak.net/lxml/
 [4] ElementTree: http://effbot.org/zone/element-index.htm
 [5] libxml2:     http://xmlsoft.org/
+[6] PyMathML:    http://pymathml.sf.net/
 
 
 Have fun!
