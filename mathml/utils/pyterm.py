@@ -1,8 +1,8 @@
-try:
-    from mathml.termbuilder import tree_converters, InfixTermBuilder
-except ImportError:
-    # for testing
-    from termbuilder import tree_converters, InfixTermBuilder
+from mathml.termbuilder import tree_converters, InfixTermBuilder
+from mathml.termparser  import (term_parsers, build_parser,
+                                InfixTermParser, InfixBoolExpressionParser, ListParser)
+
+# BUILDER
 
 class PyTermBuilder(InfixTermBuilder):
     _INTERVAL_NOTATION = {
@@ -51,5 +51,28 @@ class PyTermBuilder(InfixTermBuilder):
 
 tree_converters.register_converter('python',   PyTermBuilder())
 
+# PARSER
 
-## May add a PyTermParser in future releases ...
+class PyTermParser(InfixTermParser):
+    operator_order = '** % / * - +'
+    def _parse_operator(self, s,p,t):
+        if t[0] == '**':
+            return '^'
+        else:
+            return t
+
+class PyBoolExpressionParser(InfixBoolExpressionParser):
+    def build_term_parser(self):
+        return PyTermParser()
+
+CompletePyBoolExpression = PyBoolExpressionParser().p_bool_exp()
+CompletePyTerm           = PyTermParser().p_arithmetic_exp()
+CompletePyTermList       = ListParser(CompletePyTerm).p_list()
+
+CompletePyBoolExpression.streamline()
+CompletePyTerm.streamline()
+CompletePyTermList.streamline()
+
+term_parsers.register_converter('python_bool',      build_parser(CompletePyBoolExpression))
+term_parsers.register_converter('python_term',      build_parser(CompletePyTerm))
+term_parsers.register_converter('python_term_list', build_parser(CompletePyTermList))
