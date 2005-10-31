@@ -1,3 +1,46 @@
+2005-10-31  scoder  <scoder@toaster>
+
+	* setup.py: 0.6.2
+
+	* html/MathDOM.html, mathml/termbuilder.py, mathml/termparser.py, mathml/utils/pyterm.py, test/test.py:
+	updated Python term parser and parser framework
+
+	* README: restructuring
+
+	* mathml/termparser.py, mathml/utils/pyterm.py:
+	better Python parser, more extensibility in termparser
+
+	* README: typo
+
+2005-10-30  scoder  <scoder@toaster>
+
+	* mathml/utils/pyterm.py:
+	use new parser framework to implement Python term parser
+
+	* mathml/termparser.py:
+	parser rewrite to make it subclassable and extensible
+
+2005-10-27  scoder  <scoder@toaster>
+
+	* lxml.patch: last patch was messed up
+
+	* mathml/lmathdom.py: make SVG export depend on pmathml2
+
+	* MANIFEST.in: include new stylesheets
+
+	* ChangeLog: 0.6.1
+
+	* README: more on PyMathML integration
+
+	* README: more on mathml/utils, PyMathML integration
+
+	* lxml.patch: new lxml patch
+
+	* mathml/lmathdom.py, mathml/utils/ctop.xsl, mathml/utils/mathmlc2p.xsl, mathml/utils/mmlctop.xsl, mathml/utils/sax_pmathml.py, mathml/xmlterm.py, setup.py, test/test.py:
+	more generic integration of XSLT scripts, replaced c2p XSLT by two new scripts
+
+	* lxml.patch: new lxml patch
+
 2005-10-27  scoder  <scoder@toaster>
 
 	* README: more on mathml/utils, PyMathML integration
