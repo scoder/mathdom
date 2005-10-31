@@ -1,7 +1,7 @@
 from distutils.core import setup
 setup(
     name='mathdom',
-    version='0.6.1',
+    version='0.6.2',
     packages=['mathml', 'mathml.utils', 'mathml.pmathml'],
     package_data = {
     'mathml'       : ['schema/mathml2.rng.gz'],
@@ -35,6 +35,11 @@ you need a different representation, add a converter, but don't change
 the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
+
+New in version 0.6.2:
+
+- Generalized parser framework
+- Python term parser
 
 New in version 0.6.1:
 
