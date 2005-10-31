@@ -49,6 +49,12 @@ from pyparsing import *
 
 from datatypes import Decimal, Complex, Rational, ENotation
 
+
+# The recognised operators (each one surrounded by spaces!)
+TERM_OPERATOR_ORDER = ' ^ % / * - + ' # power, modulo, divide, times, minus, plus
+BOOL_CMP_OPERATORS  = ' = != <> > < <= >= '
+
+
 class CaselessKeyword(Keyword):
     def __init__(self, value):
         Keyword.__init__(self, value, caseless=True)
@@ -122,14 +128,14 @@ class TermTokenizer(object):
 
     @cached
     def p_int(self):
-        p_int = self._p_int + Empty()
+        p_int = self._p_int.copy()
         p_int.setName('int')
         p_int.setParseAction(self._parse_int)
         return p_int
 
     @cached
     def p_float(self):
-        p_float = self._p_float + Empty()
+        p_float = self._p_float.copy()
         p_float.setName('float')
         p_float.setParseAction(self._parse_float)
         return p_float
@@ -197,14 +203,14 @@ class ArithmeticParserBase(object):
 
 class TermParserBase(ArithmeticParserBase):
     "Base class for arithmetic term parsers."
+    OPERATOR_ORDER = TERM_OPERATOR_ORDER
+
     interval_closure = {
         ('[', ']') : u'closed',
         ('[', ')') : u'closed-open',
         ('(', ']') : u'open-closed',
         ('(', ')') : u'open'
         }
-
-    operator_order = '^ % / * - +'
 
     def _parse_operator(self, s,p,t):
         return t
@@ -214,6 +220,11 @@ class TermParserBase(ArithmeticParserBase):
         return [ tuple(t) ]
     def _parse_case(self, s,p,t):
         return [ (u'case',) + tuple(t) ]
+
+    def p_operator(self, operator):
+        p_op = Literal(operator)
+        p_op.setParseAction(self._parse_operator)
+        return p_op
 
     def p_arithmetic_interval(self, p_arithmetic_exp):
         p_arithmetic_interval = oneOf('( [') + p_arithmetic_exp + Suppress(',') + p_arithmetic_exp + oneOf(') ]')
@@ -225,28 +236,30 @@ class InfixTermParser(TermParserBase):
     p_bool_expression = Forward()
 
     # arithmetic = a+b*c-(3*4)...
+    def p_operator_term(self, operator, p_exp):
+        p_op = self.p_operator(operator)
+        # ZeroOrMore->Optional could speed this up
+        if operator == '-':
+            neg_exp = p_op + p_exp
+            neg_exp.setParseAction(self._build_expression_tree)
+            p_exp = (p_exp ^ neg_exp) + ZeroOrMore( p_op + p_exp )
+        else:
+            p_exp = p_exp + ZeroOrMore( p_op + p_exp )
+        p_exp.setParseAction(self._build_expression_tree)
+        return p_exp
+
     def p_operator_cascade(self, p_num_atom, ordered_operator_list):
         p_exp = p_num_atom
         # build grammar tree for binary operators in order of precedence
         for operator in ordered_operator_list:
-            p_op = Literal(operator)
-            p_op.setParseAction(self._parse_operator)
-            # ZeroOrMore->Optional could speed this up
-            if operator == '-':
-                neg_exp = p_op + p_exp
-                neg_exp.setParseAction(self._build_expression_tree)
-                p_exp = (p_exp ^ neg_exp) + ZeroOrMore( p_op + p_exp )
-            else:
-                p_exp = p_exp + ZeroOrMore( p_op + p_exp )
-            p_exp.setParseAction(self._build_expression_tree)
-
+            p_exp = self.p_operator_term(operator, p_exp)
         return p_exp
 
     @cached
     def p_arithmetic_exp(self):
         "Main production: arithmetic expression."
         _p_num_atom = Forward()
-        p_arithmetic_exp  = self.p_operator_cascade(_p_num_atom, self.operator_order.split())
+        p_arithmetic_exp  = self.p_operator_cascade(_p_num_atom, self.OPERATOR_ORDER.split())
 
         p_num        = self.tokenizer.p_num()
         p_identifier = self.tokenizer.p_identifier()
@@ -265,7 +278,7 @@ class InfixTermParser(TermParserBase):
         return p_function
 
     def p_case(self, p_arithmetic_exp, p_bool_expression):
-        p_case = (Suppress(CaselessKeyword(u'CASE') + CaselessKeyword(u'WHEN')) +
+        p_case = (Suppress(CaselessKeyword(u'CASE') + Optional(CaselessKeyword(u'WHEN'))) +
                   p_bool_expression +
                   Suppress(CaselessKeyword(u'THEN')) + p_arithmetic_exp +
                   # Optional => undefined values in expressions!
@@ -308,6 +321,8 @@ class InfixTermParser(TermParserBase):
 
 
 class BoolParserBase(object):
+    CMP_OPERATORS = BOOL_CMP_OPERATORS
+
     def __init__(self):
         super(BoolParserBase, self).__init__()
         self.term_parser = self.build_term_parser()
@@ -326,7 +341,11 @@ class BoolParserBase(object):
     def _parse_bool_operator(self, s,p,t):
         return t
 
-    cmp_operators = '= != <> > < <= >='
+    def _parse_cmp_operator(self, s,p,t):
+        return t
+
+    def _parse_bool_cmp_operator(self, s,p,t):
+        return t
 
     p_bool_and = CaselessKeyword(u'and')
     p_bool_or  = CaselessKeyword(u'or')
@@ -336,17 +355,20 @@ class BoolParserBase(object):
     def p_bool_operator(self):
         p_bool_operator = oneOf( u'= <>')
         p_bool_operator.setName('bool_op')
+        p_bool_operator.setParseAction(self._parse_bool_cmp_operator)
         return p_bool_operator
 
     @cached
     def p_cmp_operator(self):
-        p_cmp_operator = oneOf(self.cmp_operators)
+        p_cmp_operator = oneOf(self.CMP_OPERATORS)
         p_cmp_operator.setName('cmp_op')
+        p_cmp_operator.setParseAction(self._parse_cmp_operator)
         return p_cmp_operator
 
     @cached
     def p_cmp_in(self):
         p_cmp_in = CaselessKeyword(u'in') | CaselessKeyword(u'notin')
+        p_cmp_in.setParseAction(self._parse_cmp_operator)
         return p_cmp_in
 
 
@@ -368,12 +390,12 @@ class InfixBoolExpressionParser(BoolParserBase):
 
     @cached
     def p_str_cmp(self):
-        p_identifier   = self.tokenizer.p_identifier()
-        p_string       = self.tokenizer.p_string()
         p_cmp_operator = self.p_cmp_operator()
+        p_string       = self.tokenizer.p_string()
+        p_identifier   = self.tokenizer.p_identifier()
 
         p_str_cmp   = p_identifier + OneOrMore( p_cmp_operator + p_string )
-        p_str_cmp  |= p_string     + OneOrMore( p_cmp_operator + p_identifier )
+        p_str_cmp  |= p_string     + OneOrMore( p_cmp_operator + (p_identifier | p_string) )
         return p_str_cmp
 
     @cached
@@ -402,26 +424,31 @@ class InfixBoolExpressionParser(BoolParserBase):
 
     # bool_exp = a or b and c and (d or e) ...
     def _p_op_exp(self, p_op, p_exp):
+        p_op = p_op.copy()
         p_op.setParseAction(self._parse_bool_operator)
         p_op_exp = p_exp + ZeroOrMore( p_op + p_exp )
         p_op_exp.setParseAction(self._build_expression_tree)
         return p_op_exp
-        
+
+    def p_not_exp(self, p_exp):
+        p_bool_not = self.p_bool_not
+        p_bool_not.setParseAction(self._parse_bool_operator)
+        p_not_exp = p_bool_not + p_exp
+        p_not_exp.setParseAction(self._build_expression_tree)
+        return p_not_exp
+
     @cached
     def p_bool_exp(self):
         p_atom_exp = Forward()
 
-        p_and_exp = self._p_op_exp(self.p_bool_and, p_atom_exp)
-        p_and_exp.setParseAction(self._build_expression_tree)
+        p_exp = p_atom_exp
+        for p_operator in (self.p_bool_and, self.p_bool_or):
+            p_exp = self._p_op_exp(p_operator, p_exp)
 
-        p_or_exp  = self._p_op_exp(self.p_bool_or,  p_and_exp )
-        p_or_exp.setParseAction(self._build_expression_tree)
+        p_not_exp = self.p_not_exp(p_atom_exp)
 
-        p_not_exp = self.p_bool_not + p_atom_exp
-        p_not_exp.setParseAction(self._build_expression_tree)
-
-        p_atom_exp <<= p_not_exp | (Suppress('(') + p_or_exp + Suppress(')')) | self.p_cmp_exp()
-        return p_or_exp
+        p_atom_exp <<= p_not_exp | (Suppress('(') + p_exp + Suppress(')')) | self.p_cmp_exp()
+        return p_exp
 
 # repair CASE statement in InfixTermParser
 InfixTermParser.p_bool_expression <<= InfixBoolExpressionParser().p_bool_exp()
@@ -439,16 +466,6 @@ class ListParser(object):
         p_list = delimitedList(self.p_item)
         p_list.setParseAction(self._parse_list)
         return p_list
-
-
-# optimize parser
-CompleteBoolExpression = InfixBoolExpressionParser().p_bool_exp()
-CompleteTerm           = InfixTermParser().p_arithmetic_exp()
-CompleteTermList       = ListParser(CompleteTerm).p_list()
-
-CompleteBoolExpression.streamline()
-CompleteTerm.streamline()
-CompleteTermList.streamline()
 
 
 class ConverterRegistry(object):
@@ -502,6 +519,8 @@ class TermParsing(ConverterRegistry):
 
 
 def build_parser(parser):
+    parser = parser + StringEnd()
+    parser.streamline()
     parseString = parser.parseString
     class Parser(object):
         def parse(self, term):
@@ -513,10 +532,14 @@ def build_parser(parser):
 
 term_parsers = TermParsing()
 
-term_parsers.register_converter('infix_bool',      build_parser(CompleteBoolExpression))
-term_parsers.register_converter('infix_term',      build_parser(CompleteTerm))
-term_parsers.register_converter('infix_term_list', build_parser(CompleteTermList))
-
+parser = InfixTermParser().p_arithmetic_exp()
+term_parsers.register_converter('infix_bool',
+                                build_parser(InfixBoolExpressionParser().p_bool_exp()))
+term_parsers.register_converter('infix_term',
+                                build_parser(parser))
+term_parsers.register_converter('infix_term_list',
+                                build_parser(ListParser(parser).p_list()))
+del parser
 
 try:
     import sys

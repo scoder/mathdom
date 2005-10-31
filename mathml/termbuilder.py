@@ -18,13 +18,13 @@ except ImportError:
 
 from itertools import *
 
-from mathml.termparser import InfixTermParser, InfixBoolExpressionParser, ConverterRegistry
-
+from mathml.termparser import (InfixTermParser, InfixBoolExpressionParser, ConverterRegistry,
+                               TERM_OPERATOR_ORDER, BOOL_CMP_OPERATORS)
 
 class TermBuilder(object):
     "Abstract superclass for term builders."
-    OPERATOR_ORDER = list(op for ops in (InfixTermParser.operator_order, '| in',
-                                         InfixBoolExpressionParser.cmp_operators, 'and xor or')
+    OPERATOR_ORDER = list(op for ops in (TERM_OPERATOR_ORDER, '| in',
+                                         BOOL_CMP_OPERATORS, 'and xor or')
                           for op in ops.split() )
     OPERATOR_SET = frozenset(OPERATOR_ORDER)
 

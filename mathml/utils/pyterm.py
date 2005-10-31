@@ -1,15 +1,18 @@
 from mathml.termbuilder import tree_converters, InfixTermBuilder
 from mathml.termparser  import (term_parsers, build_parser, cached, TermTokenizer,
-                                InfixTermParser, InfixBoolExpressionParser, ListParser)
+                                InfixTermParser, InfixBoolExpressionParser, ListParser,
+                                CaselessKeyword)
+
+__all__ = [ 'PyTermBuilder', 'PyTermParser', 'PyBoolExpressionParser' ]
 
 # BUILDER
 
 class PyTermBuilder(InfixTermBuilder):
     _INTERVAL_NOTATION = {
-        u'closed'      : u'xrange(int(%s),   int(%s)+1)',
-        u'closed-open' : u'xrange(int(%s),   int(%s)  )',
-        u'open-closed' : u'xrange(int(%s)+1, int(%s)+1)',
-        u'open'        : u'xrange(int(%s)+1, int(%s)  )'
+        u'closed'      : u'xrange(int(%s),   int(%s)+1)'.replace(u' ', u''),
+        u'closed-open' : u'xrange(int(%s),   int(%s)  )'.replace(u' ', u''),
+        u'open-closed' : u'xrange(int(%s)+1, int(%s)+1)'.replace(u' ', u''),
+        u'open'        : u'xrange(int(%s)+1, int(%s)  )'.replace(u' ', u'')
         }
 
     _OPERATOR_MAP = {
@@ -44,6 +47,14 @@ class PyTermBuilder(InfixTermBuilder):
             real_str = ''
         return [ u'(%s%s%sj)' % (real_str, (value.imag >= 0) and '+' or '', value.imag_str) ]
 
+    def _handle_case(self, operator, operands, affin_status):
+        assert operator == 'case'
+        result = [ operands[0], 'and', operands[1] ]
+        if len(operands) > 2:
+            result.append('or')
+            result.append(operands[2])
+        return result
+
     def _handle_interval(self, operator, operands, affin):
         assert operator[:9] == u'interval:'
         return [ self._INTERVAL_NOTATION[ operator[9:] ] % tuple(operands) ]
@@ -72,7 +83,7 @@ class PyTermTokenizer(TermTokenizer):
         return p_bool
 
 class PyTermParser(InfixTermParser):
-    operator_order = '** % / * - +'
+    OPERATOR_ORDER = InfixTermParser.OPERATOR_ORDER.replace(' ^ ', ' ** ')
 
     def build_tokenizer(self):
         return PyTermTokenizer()
@@ -87,6 +98,12 @@ class PyTermParser(InfixTermParser):
         else:
             return t
 
+    def p_operator(self, operator):
+        p_op = super(PyTermParser, self).p_operator(operator)
+        if operator == '*':
+            p_op = p_op + NotAny('*')
+        return p_op
+
     def _parse_interval(self, s,p,t):
         if len(t) == 1:
             start, stop = self._zero(), t[0]
@@ -98,8 +115,9 @@ class PyTermParser(InfixTermParser):
         return NoMatch()
 
     def p_arithmetic_interval(self, p_arithmetic_exp):
-        p_interval  = Suppress(Keyword('xrange') | Keyword('range'))
-        p_interval += Suppress('(') + p_arithmetic_exp + Optional(Suppress(',') + p_arithmetic_exp) + Suppress(')')
+        p_interval = Suppress(Literal('xrange') | Literal('range')) + Suppress('(') \
+                     + p_arithmetic_exp + Optional(Suppress(',') + p_arithmetic_exp) \
+                     + Suppress(')')
         p_interval.setParseAction(self._parse_interval)
         return p_interval
 
@@ -107,14 +125,19 @@ class PyBoolExpressionParser(InfixBoolExpressionParser):
     def build_term_parser(self):
         return PyTermParser()
 
-CompletePyBoolExpression = PyBoolExpressionParser().p_bool_exp()
-CompletePyTerm           = PyTermParser().p_arithmetic_exp()
-CompletePyTermList       = ListParser(CompletePyTerm).p_list()
+    @cached
+    def p_cmp_in(self):
+        not_in = Combine(CaselessKeyword(u'not') + CaselessKeyword(u'in'), adjacent=False)
+        p_cmp_in = CaselessKeyword(u'in') | not_in
+        p_cmp_in.setParseAction(self._parse_cmp_operator)
+        return p_cmp_in
 
-CompletePyBoolExpression.streamline()
-CompletePyTerm.streamline()
-CompletePyTermList.streamline()
 
-term_parsers.register_converter('python_bool',      build_parser(CompletePyBoolExpression))
-term_parsers.register_converter('python_term',      build_parser(CompletePyTerm))
-term_parsers.register_converter('python_term_list', build_parser(CompletePyTermList))
+py_term = PyTermParser().p_arithmetic_exp()
+term_parsers.register_converter('python_bool',
+                                build_parser(PyBoolExpressionParser().p_bool_exp()))
+term_parsers.register_converter('python_term',
+                                build_parser(py_term))
+term_parsers.register_converter('python_term_list',
+                                build_parser(ListParser(py_term).p_list()))
+del py_term
