@@ -73,15 +73,15 @@ class TermTokenizer(object):
     string, int, float, bool.
     """
     def _parse_attribute(self, s,p,t):
-        return [ (u'name',          t[0]) ]
+        return [ (u'name',           self._filter_name( t[0] )) ]
     def _parse_int(self, s,p,t):
-        return [ (u'const:integer', int(t[0])) ]
+        return [ (u'const:integer',  int(t[0])) ]
     def _parse_float(self, s,p,t):
-        return [ (u'const:real',    Decimal(t[0])) ]
+        return [ (u'const:real',     Decimal(t[0])) ]
     def _parse_bool(self, s,p,t):
-        return [ (u'const:bool',    t[0].lower() == 'true') ]
+        return [ (u'const:bool',     t[0].lower() == 'true') ]
     def _parse_string(self, s,p,t):
-        return [ (u'const:string',  t[0][1:-1]) ]
+        return [ (u'const:string',   t[0][1:-1]) ]
     def _parse_enotation(self, s,p,t):
         return [ (u'const:enotation', ENotation(t[0], t[1])) ]
     def _parse_complex(self, s,p,t):
@@ -90,6 +90,9 @@ class TermTokenizer(object):
         else:
             value = Complex(Decimal(t[0]), Decimal(t[1]))
         return [ (u'const:complex', value) ]
+
+    def _filter_name(self, name):
+        return name
 
     # atoms: int, float, string
     p_sign = oneOf('+ -')
@@ -153,17 +156,22 @@ class TermTokenizer(object):
 
     # identifier = [a-z][a-z0-9_]*
     @cached
-    def p_identifier(self):
+    def p_simple_identifier(self):
         p_identifier = Word('abcdefghijklmnopqrstuvwxyz', '_abcdefghijklmnopqrstuvwxyz0123456789')
         p_identifier.setName('identifier')
         return p_identifier
 
     @cached
     def p_attribute(self):
-        p_attribute = Combine(p_identifier + ZeroOrMore( '.' + self.p_identifier() ))
+        p_identifier = self.p_simple_identifier()
+        p_attribute = Combine(p_identifier + ZeroOrMore( '.' + p_identifier ))
         p_attribute.setName('attribute')
         p_attribute.setParseAction(self._parse_attribute)
         return p_attribute
+
+    @cached
+    def p_identifier(self):
+        return self.p_attribute()
 
 
 class ArithmeticParserBase(object):
@@ -206,6 +214,7 @@ class TermParserBase(ArithmeticParserBase):
         return [ tuple(t) ]
     def _parse_case(self, s,p,t):
         return [ (u'case',) + tuple(t) ]
+
     def p_arithmetic_interval(self, p_arithmetic_exp):
         p_arithmetic_interval = oneOf('( [') + p_arithmetic_exp + Suppress(',') + p_arithmetic_exp + oneOf(') ]')
         p_arithmetic_interval.setParseAction(self._parse_interval)
@@ -251,18 +260,18 @@ class InfixTermParser(TermParserBase):
 
     # function = identifier(exp,...)
     def p_function(self, p_arithmetic_exp):
-        p_function = self.tokenizer.p_identifier() + Suppress('(') + delimitedList(p_arithmetic_exp) + Suppress(')')
+        p_function = self.tokenizer.p_simple_identifier() + Suppress('(') + delimitedList(p_arithmetic_exp) + Suppress(')')
         p_function.setParseAction(self._parse_function)
         return p_function
 
     def p_case(self, p_arithmetic_exp, p_bool_expression):
-        p_case = (Suppress(CaselessKeyword('CASE') + CaselessKeyword('WHEN')) +
+        p_case = (Suppress(CaselessKeyword(u'CASE') + CaselessKeyword(u'WHEN')) +
                   p_bool_expression +
-                  Suppress(CaselessKeyword('THEN')) + p_arithmetic_exp +
+                  Suppress(CaselessKeyword(u'THEN')) + p_arithmetic_exp +
                   # Optional => undefined values in expressions!
                   #Optional(Suppress(CaselessKeyword('ELSE')) + _p_exp) +
-                  Suppress(CaselessKeyword('ELSE')) + p_arithmetic_exp +
-                  Suppress(CaselessKeyword('END'))
+                  Suppress(CaselessKeyword(u'ELSE')) + p_arithmetic_exp +
+                  Suppress(CaselessKeyword(u'END'))
                   )
         p_case.setParseAction(self._parse_case)
         return p_case
@@ -302,11 +311,17 @@ class BoolParserBase(object):
     def __init__(self):
         super(BoolParserBase, self).__init__()
         self.term_parser = self.build_term_parser()
-        self.tokenizer   = self.term_parser.tokenizer
+        self.tokenizer   = self.build_tokenizer()
         self._build_expression_tree = self.term_parser._build_expression_tree
 
     def build_term_parser(self):
+        "Default: raise NotImplementedException"
+        raise NotImplementedException, "build_term_parser()"
         return InfixTermParser()
+
+    def build_tokenizer(self):
+        "Default: copy tokenizer from self.term_parser"
+        return self.term_parser.tokenizer
 
     def _parse_bool_operator(self, s,p,t):
         return t
@@ -337,6 +352,10 @@ class BoolParserBase(object):
 
 class InfixBoolExpressionParser(BoolParserBase):
     # exp = a op b
+    def build_term_parser(self):
+        "Default: InfixTermParser()"
+        return InfixTermParser()
+
     @cached
     def p_bool_cmp(self):
         p_bool_operator = self.p_bool_operator()

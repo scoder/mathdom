@@ -1,5 +1,5 @@
 from mathml.termbuilder import tree_converters, InfixTermBuilder
-from mathml.termparser  import (term_parsers, build_parser,
+from mathml.termparser  import (term_parsers, build_parser, cached, TermTokenizer,
                                 InfixTermParser, InfixBoolExpressionParser, ListParser)
 
 # BUILDER
@@ -53,13 +53,55 @@ tree_converters.register_converter('python',   PyTermBuilder())
 
 # PARSER
 
+from pyparsing import *
+
+class PyTermTokenizer(TermTokenizer):
+    _CONSTANT_MAP = {
+        u'math.e'  : u'e',
+        u'math.pi' : u'pi'
+        }
+    map_constant = _CONSTANT_MAP.get
+    def _filter_name(self, name):
+        return self.map_constant(name, name)
+
+    @cached
+    def p_bool(self):
+        p_bool = Keyword(u'True') | Keyword(u'False')
+        p_bool.setName('bool')
+        p_bool.setParseAction(self._parse_bool)
+        return p_bool
+
 class PyTermParser(InfixTermParser):
     operator_order = '** % / * - +'
+
+    def build_tokenizer(self):
+        return PyTermTokenizer()
+
+    @cached
+    def _zero(self):
+        return self.tokenizer._parse_int(None, None, ["0"])[0]
+
     def _parse_operator(self, s,p,t):
         if t[0] == '**':
-            return '^'
+            return [ '^' ]
         else:
             return t
+
+    def _parse_interval(self, s,p,t):
+        if len(t) == 1:
+            start, stop = self._zero(), t[0]
+        else:
+            start, stop = t
+        return [ (u'interval:closed-open', start, stop) ]
+
+    def p_case(self, *args):
+        return NoMatch()
+
+    def p_arithmetic_interval(self, p_arithmetic_exp):
+        p_interval  = Suppress(Keyword('xrange') | Keyword('range'))
+        p_interval += Suppress('(') + p_arithmetic_exp + Optional(Suppress(',') + p_arithmetic_exp) + Suppress(')')
+        p_interval.setParseAction(self._parse_interval)
+        return p_interval
 
 class PyBoolExpressionParser(InfixBoolExpressionParser):
     def build_term_parser(self):
