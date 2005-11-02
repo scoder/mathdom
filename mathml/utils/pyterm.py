@@ -1,5 +1,5 @@
 from mathml.termbuilder import tree_converters, InfixTermBuilder
-from mathml.termparser  import (term_parsers, build_parser, cached, TermTokenizer,
+from mathml.termparser  import (term_parsers, cached, TermTokenizer,
                                 InfixTermParser, InfixBoolExpressionParser, ListParser,
                                 CaselessKeyword)
 
@@ -134,10 +134,7 @@ class PyBoolExpressionParser(InfixBoolExpressionParser):
 
 
 py_term = PyTermParser().p_arithmetic_exp()
-term_parsers.register_converter('python_bool',
-                                build_parser(PyBoolExpressionParser().p_bool_exp()))
-term_parsers.register_converter('python_term',
-                                build_parser(py_term))
-term_parsers.register_converter('python_term_list',
-                                build_parser(ListParser(py_term).p_list()))
+term_parsers.register_converter('python_bool',      PyBoolExpressionParser().p_bool_exp())
+term_parsers.register_converter('python_term',      py_term)
+term_parsers.register_converter('python_term_list', ListParser(py_term).p_list())
 del py_term

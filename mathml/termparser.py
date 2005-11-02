@@ -403,7 +403,7 @@ class InfixBoolExpressionParser(BoolParserBase):
         p_arithmetic_exp      = self.term_parser.p_arithmetic_exp()
         p_arithmetic_interval = self.term_parser.p_arithmetic_interval(p_arithmetic_exp)
 
-        return p_arithmetic_exp + self.p_cmp_in() + p_arithmetic_interval # p_arithmetic_tuple
+        return p_arithmetic_exp + self.p_cmp_in() + p_arithmetic_interval
 
     @cached
     def p_factor_cmp(self):
@@ -468,6 +468,17 @@ class ListParser(object):
         return p_list
 
 
+def build_parser(parser):
+    parser = parser + StringEnd()
+    parser.streamline()
+    parseString = parser.parseString
+    class Parser(object):
+        def parse(self, term):
+            if not isinstance(term, unicode):
+                term = unicode(term, 'ascii')
+            return parseString(term)[0]
+    return Parser()
+
 class ConverterRegistry(object):
     """Objects of this class are used to reference the different converters.
 
@@ -479,6 +490,8 @@ class ConverterRegistry(object):
 
     def register_converter(self, converter_type, converter):
         "Register a converter for an converter type."
+        if isinstance(converter, ParserElement):
+            converter = build_parser(converter)
         if not hasattr(converter, self._METHOD_NAME):
             raise TypeError, "Converters must have a '%s' method." % self._METHOD_NAME
         self._converters[converter_type] = converter
@@ -508,7 +521,7 @@ class ConverterRegistry(object):
         return convert(value)
 
 
-# main module functions:
+# register parsers:
 
 class TermParsing(ConverterRegistry):
     _METHOD_NAME = 'parse'
@@ -518,27 +531,12 @@ class TermParsing(ConverterRegistry):
         return converter.parse(term)
 
 
-def build_parser(parser):
-    parser = parser + StringEnd()
-    parser.streamline()
-    parseString = parser.parseString
-    class Parser(object):
-        def parse(self, term):
-            if not isinstance(term, unicode):
-                term = unicode(term, 'ascii')
-            return parseString(term)[0]
-    return Parser()
-            
-
 term_parsers = TermParsing()
 
 parser = InfixTermParser().p_arithmetic_exp()
-term_parsers.register_converter('infix_bool',
-                                build_parser(InfixBoolExpressionParser().p_bool_exp()))
-term_parsers.register_converter('infix_term',
-                                build_parser(parser))
-term_parsers.register_converter('infix_term_list',
-                                build_parser(ListParser(parser).p_list()))
+term_parsers.register_converter('infix_bool',      InfixBoolExpressionParser().p_bool_exp())
+term_parsers.register_converter('infix_term',      parser)
+term_parsers.register_converter('infix_term_list', ListParser(parser).p_list())
 del parser
 
 try:
