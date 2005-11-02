@@ -1,3 +1,28 @@
+2005-11-02  scoder  <scoder@toaster>
+
+	* setup.py: 0.6.2.1
+
+	* mathml/termparser.py: second try, needed some restructuring
+
+	* mathml/termparser.py, mathml/utils/pyterm.py:
+	let ConverterRegistry accept pyparsing.ParserElement objects and automatically build term parsers from them
+
+	* mathml/utils/pyterm.py: let pyterm export ParseException
+
+2005-10-31  scoder  <scoder@toaster>
+
+	* ChangeLog, setup.py: 0.6.2
+
+	* html/MathDOM.html, mathml/termbuilder.py, mathml/termparser.py, mathml/utils/pyterm.py, test/test.py:
+	updated Python term parser and parser framework
+
+	* README: restructuring
+
+	* mathml/termparser.py, mathml/utils/pyterm.py:
+	better Python parser, more extensibility in termparser
+
+	* README: typo
+
 2005-10-31  scoder  <scoder@toaster>
 
 	* setup.py: 0.6.2
