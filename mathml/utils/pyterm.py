@@ -3,7 +3,7 @@ from mathml.termparser  import (term_parsers, build_parser, cached, TermTokenize
                                 InfixTermParser, InfixBoolExpressionParser, ListParser,
                                 CaselessKeyword)
 
-__all__ = [ 'PyTermBuilder', 'PyTermParser', 'PyBoolExpressionParser' ]
+__all__ = [ 'PyTermBuilder', 'PyTermParser', 'PyBoolExpressionParser', 'ParseException' ]
 
 # BUILDER
 
