@@ -489,9 +489,7 @@ class ConverterRegistry(object):
         self._converters  = {}
 
     def register_converter(self, converter_type, converter):
-        "Register a converter for an converter type."
-        if isinstance(converter, ParserElement):
-            converter = build_parser(converter)
+        "Register a converter for a converter type."
         if not hasattr(converter, self._METHOD_NAME):
             raise TypeError, "Converters must have a '%s' method." % self._METHOD_NAME
         self._converters[converter_type] = converter
@@ -525,6 +523,12 @@ class ConverterRegistry(object):
 
 class TermParsing(ConverterRegistry):
     _METHOD_NAME = 'parse'
+    def register_converter(self, converter_type, converter):
+        "Register a converter for a converter type. Accepts pyparsing parsers."
+        if isinstance(converter, ParserElement):
+            converter = build_parser(converter)
+        super(TermParsing, self).register_converter(converter_type, converter)
+
     def parse(self, term, input_type):
         "Convert a parse tree into a term of the given input type."
         converter = self._converters[input_type]
