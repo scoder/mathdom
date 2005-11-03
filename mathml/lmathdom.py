@@ -7,8 +7,7 @@ from StringIO  import StringIO
 
 from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
                         register_namespace_classes, XSLT, XMLSchema, RelaxNG,
-                        XPathElementEvaluator)
-from lxml.TreeBuilder import SaxTreeBuilder
+                        XPathElementEvaluator, SaxTreeBuilder)
 
 from mathml           import MATHML_NAMESPACE_URI, UNARY_FUNCTIONS
 from mathml.xmlterm   import SaxTerm, dom_to_tree, serialize_dom
