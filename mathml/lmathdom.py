@@ -3,11 +3,11 @@
 __all__ = [ 'MathDOM' ]
 
 import sys
-from itertools import chain
 from StringIO  import StringIO
 
-from lxml.etree import (parse, tostring, ElementBase, Element, SubElement, ElementTree,
-                        register_namespace_classes, XSLT, XMLSchema, RelaxNG)
+from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
+                        register_namespace_classes, XSLT, XMLSchema, RelaxNG,
+                        XPathElementEvaluator)
 from lxml.TreeBuilder import SaxTreeBuilder
 
 from mathml           import MATHML_NAMESPACE_URI, UNARY_FUNCTIONS
@@ -59,7 +59,7 @@ for output_type, (input_type, xslt) in STYLESHEETS.items():
         try:
             input_type, xslt = STYLESHEETS[output_type]
         except KeyError:
-            raise ValueError, "Unsupported output format %s, please install appropriate stylesheets" % _output_format
+            raise ValueError, "Unsupported output format %s, please install appropriate stylesheets" % output_type
         xslts.insert(0, xslt)
         output_type = input_type
 
@@ -174,11 +174,11 @@ class MathElement(ElementBase):
 
         evaluator = XPathElementEvaluator(self, other_namespaces)
         evaluator.registerNamespace(u'math', MATHML_NAMESPACE_URI)
-        return self._etree.xpath(expression, other_namespaces)
+        return super(ElementBase, self).xpath(expression, other_namespaces)
 
     def _xpath(self, xpath):
         try:
-            evaluate = self.__xpath_evaluate
+            evaluate = self.__xpath_evaluator
         except AttributeError:
             evaluate = self.__xpath_evaluator = XPathElementEvaluator(self, _MATH_NS_DICT).evaluate
         return evaluate(xpath)
@@ -353,7 +353,7 @@ class math_apply(SerializableMathElement):
         if isinstance(new_operator, (str, unicode)):
             SubElement(self, _tag_name(new_operator))
         elif isinstance(new_operator, MathElement):
-            operands.insert(0, operator)
+            operands.insert(0, new_operator)
         else:
             raise ValueError, "Operator value has invalid type, use strings or math elements."
         for operand in operands:
@@ -409,7 +409,6 @@ class MathDOM(object):
         if hasattr(source, 'read'):
             return source
         else:
-            from StringIO import StringIO
             return StringIO(source)
 
     @classmethod

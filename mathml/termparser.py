@@ -330,9 +330,8 @@ class BoolParserBase(object):
         self._build_expression_tree = self.term_parser._build_expression_tree
 
     def build_term_parser(self):
-        "Default: raise NotImplementedException"
-        raise NotImplementedException, "build_term_parser()"
-        return InfixTermParser()
+        "Default: raise NotImplementedError"
+        raise NotImplementedError, "build_term_parser()"
 
     def build_tokenizer(self):
         "Default: copy tokenizer from self.term_parser"
@@ -490,7 +489,7 @@ class ConverterRegistry(object):
 
     def register_converter(self, converter_type, converter):
         "Register a converter for a converter type."
-        if not hasattr(converter, self._METHOD_NAME):
+        if hasattr(self, '_METHOD_NAME') and not hasattr(converter, self._METHOD_NAME):
             raise TypeError, "Converters must have a '%s' method." % self._METHOD_NAME
         self._converters[converter_type] = converter
 

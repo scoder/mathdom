@@ -331,7 +331,7 @@ class MathDOM(object):
     def __init__(self, document=None):
         self.__common_methods = METHODS_BY_ELEMENT_NAME.get(None, ())
         if document is None:
-            dom = getDOMImplementation()
+            dom_impl = getDOMImplementation()
             document = dom_impl.createDocument(MATHML_NAMESPACE_URI, u"math", None)
         self.__augmentElements(document)
         self._document = document
@@ -388,7 +388,7 @@ class MathDOM(object):
     def to_tree(self):
         return dom_to_tree(self._document)
 
-    def serialize(self, output_format=None, converter=None, **kwargs):
+    def serialize(self, output_format=None, converter=None):
         "Serialize to 'mathml' (default) or any other supported term format."
         if converter is None:
             if output_format is None:
@@ -399,7 +399,7 @@ class MathDOM(object):
                 return out.getvalue()
             elif output_format == 'pmathml':
                 raise ValueError, "Presentation MathML requires XSLT."
-        return serialize_dom(self._etree, output_format, converter)
+        return serialize_dom(self._document, output_format, converter)
 
     if HAS_XPATH:
         def xpath(self, expression, other_namespaces=None):
@@ -435,7 +435,7 @@ class MathDOM(object):
         apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
         function_tag = create_element(MATHML_NAMESPACE_URI, name)
         apply_tag.appendChild(function_tag)
-        augmentElements(apply_tag)
+        self.__augmentElements(apply_tag)
         if args:
             function_tag.childNodes[:] = args
         return apply_tag
