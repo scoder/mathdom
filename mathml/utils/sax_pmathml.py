@@ -53,4 +53,4 @@ def buildFromPMathml(etree, plotter):
     return handler.buildTree()
 
 def buildFromMathDOM(mathdom, plotter):
-    return buildFromPres(mathdom.to_pmathml(), plotter)
+    return buildFromPMathml(mathdom.to_pmathml(), plotter)
