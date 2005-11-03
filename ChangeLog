@@ -1,5 +1,33 @@
 2005-11-03  scoder  <scoder@toaster>
 
+	* setup.py: 0.6.3.1
+
+	* mathml/lmathdom.py: fix lxml import bug
+
+	* ChangeLog: 0.6.3
+
+	* mathml/utils/sax_pmathml.py: one more pychecker fix
+
+	* ChangeLog, setup.py: 0.6.3
+
+	* mathml/lmathdom.py, mathml/mathdom.py, mathml/termparser.py:
+	pychecker fixes
+
+2005-11-03  scoder  <scoder@toaster>
+
+	* mathml/lmathdom.py: fix lxml import bug
+
+	* ChangeLog: 0.6.3
+
+	* mathml/utils/sax_pmathml.py: one more pychecker fix
+
+	* ChangeLog, setup.py: 0.6.3
+
+	* mathml/lmathdom.py, mathml/mathdom.py, mathml/termparser.py:
+	pychecker fixes
+
+2005-11-03  scoder  <scoder@toaster>
+
 	* mathml/utils/sax_pmathml.py: one more pychecker fix
 
 	* ChangeLog, setup.py: 0.6.3
