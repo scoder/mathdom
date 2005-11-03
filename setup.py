@@ -36,6 +36,10 @@ the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
 
+New in version 0.6.3.1:
+
+- Fixes for a number of bugs in mathdom and lmathdom modules
+
 New in version 0.6.2:
 
 - Generalized parser framework
