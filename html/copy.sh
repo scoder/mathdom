@@ -8,7 +8,7 @@ VERSION=`ls ../releases/mathdom* | sed -ne "s/.*mathdom-\([0-9.]\+\)[.]tar.*/\1/
 
 echo "Current version: $VERSION"
 
-sed -e "s|\(<!--CURRENT-->\)[^<]*\(<!--/CURRENT-->\)|\1$VERSION\2| ; \
+sed -e "s|\(<!--CURRENT-->\)[^<]*\(<!--/CURRENT-->\)|\1 $VERSION \2| ; \
         s|mathdom-[0-9.]*tar.gz|mathdom-$VERSION.tar.gz| ; \
         s|<!--XHTMLLOGO-->|${XHTMLLOGO//  / }|
         s|<!--SFLOGO-->|${SFLOGO//  / }|
@@ -16,4 +16,4 @@ sed -e "s|\(<!--CURRENT-->\)[^<]*\(<!--/CURRENT-->\)|\1$VERSION\2| ; \
         " > index.html < MathDOM.html
 ls -l index.html
 
-rsync -ruvtL index.html *.png *.css *.patch scoder@shell.sourceforge.net:/home/groups/m/ma/mathdom/htdocs/
+rsync -ruvtL index.html *.png *.css scoder@shell.sourceforge.net:/home/groups/m/ma/mathdom/htdocs/
