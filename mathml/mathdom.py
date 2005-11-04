@@ -65,6 +65,28 @@ def register_method(function):
 
 class MathElement(Element):
     "Fake class containing methods for different MathML Element objects."
+    # ElementTree API methods
+    @register_method
+    def get(self, attr_name):
+        return self.getAttributeNS(None, attr_name)
+
+    @register_method
+    def set(self, attr_name, value):
+        return self.setAttributeNS(None, attr_name, value)
+
+    @register_method
+    def __iter__(self):
+        return iter(self.childNodes)
+
+    @register_method
+    def __getitem__(self, index):
+        return self.childNodes[index]
+
+    @register_method
+    def __setitem__(self, index, child):
+        old_child = self.childNodes[index]
+        self.replaceChild(old_child, child)
+
     if HAS_XPATH:
         @register_method
         def xpath(self, expression, other_namespaces=None):
@@ -76,6 +98,7 @@ class MathElement(Element):
             context = Context(self, processorNss=other_namespaces)
             return xpath.Evaluate(expression, context=context)
 
+    # MathML element methods
     @register_method
     def mathtype(self):
         return self.localName

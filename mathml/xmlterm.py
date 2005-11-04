@@ -14,7 +14,7 @@ Usage examples:
 >>> term = 'pi*(1+.3i) + 1'
 >>> bool_term = '%(term)s = 1 or %(term)s > 5 and true' % {'term':term}
 >>> doc = MathDOM.fromSax(bool_term, SaxTerm.for_input_type('infix_bool')())
->>> # or use this:
+>>> # or use this shortcut:
 >>> doc = MathDOM.fromString(bool_term, 'infix_bool')
 >>> doc.toMathml(indent=True)
 <?xml version='1.0' encoding='UTF-8'?>
@@ -149,7 +149,7 @@ def dom_to_tree(doc_or_element):
         otherwise = None
         case = []
         last_case = case
-        for piece in piecewise.childNodes:
+        for piece in piecewise:
             name = piece.localName
             if name == u'piece':
                 new_case = _piece_to_case(piece)
@@ -183,19 +183,19 @@ def dom_to_tree(doc_or_element):
             operator = element.operator()
             if operator.childNodes:
                 raise NotImplementedError, u"function composition is not supported"
-            name = operator.localName
+            name = operator.mathtype()
 
-            operands = map(_recursive_dom_to_tree, islice(element.childNodes, 1, None))
+            operands = map(_recursive_dom_to_tree, element.operands())
             operands.insert(0, map_operator(name, name))
             return operands
         elif mtype == u'piecewise':
             return _recursive_piecewise(element)
         elif mtype == u'list':
-            list_items = map(_recursive_dom_to_tree, element.childNodes)
+            list_items = map(_recursive_dom_to_tree, element)
             list_items.insert(0, mtype)
             return list_items
         elif mtype == u'interval':
-            list_items = map(_recursive_dom_to_tree, element.childNodes)
+            list_items = map(_recursive_dom_to_tree, element)
             list_items.insert(0, '%s:%s' % (mtype, element.closure()))
             return list_items
         else:
