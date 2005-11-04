@@ -57,6 +57,7 @@ for option in options:
 
 if '--help' in options or '--help-mathdom' in options:
     print """MathDOM package install options:
+    --help-mathdom       : show this usage information and exit
     --name=XXX           : force package name to XXX
     --contrib-lxml       : include lxml sources in 'contrib/lxml/'  (%s)
     --no-contrib-lxml    : do not include lxml sources
