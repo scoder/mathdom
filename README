@@ -66,7 +66,7 @@ with MathDOM if you want to use lxml. The patch should apply to SVN
 versions of lxml that are newer than 0.7. The patch has been submitted
 for inclusion in lxml. You may also consider getting the patched SVN
 version from a branch:
-svn co http://codespeak.net/svn/lxml/branch/scoder1 lxml-scoder1
+svn co http://codespeak.net/svn/lxml/branch/scoder1 contrib/lxml
 
 
 The files:
