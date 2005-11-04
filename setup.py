@@ -1,12 +1,163 @@
 from distutils.core import setup
+import sys, os
+
+VERSION  = '0.6.3.1'
+PACKAGE_NAME = 'mathdom'
+PACKAGES = ['mathml', 'mathml.utils']
+PACKAGE_DATA = {}
+
+# CONFIG DEFAULTS
+
+FORCED_PACKAGE_NAME=None
+INCLUDE_LXML_SOURCE=False
+REQUIRE_PACKAGES_FOR_BUILD=False
+
+# CONFIGURE PACKAGE
+
+root_dir = os.path.dirname(__file__)
+src_dir  = os.path.join(root_dir, 'mathml')
+
+try:
+    os.stat(os.path.join(src_dir, 'lmathdom.py'))
+    HAS_LMATHDOM = True
+except OSError:
+    HAS_LMATHDOM = False
+
+try:
+    os.stat(os.path.join(src_dir, 'mathdom.py'))
+    HAS_MATHDOM = True
+except OSError:
+    HAS_MATHDOM = False
+
+# CMD LINE OVERRIDE
+
+options = sys.argv[1:]
+for option in options:
+    remove_option = True
+    if option.startswith('--name='):
+        FORCED_PACKAGE_NAME=option[7:]
+    elif option == '--contrib-lxml':
+        INCLUDE_LXML_SOURCE = True
+    elif option == '--no-contrib-lxml':
+        INCLUDE_LXML_SOURCE = False
+    elif option == '--require-imports':
+        REQUIRE_PACKAGES_FOR_BUILD = True
+    elif option == '--no-require-imports':
+        REQUIRE_PACKAGES_FOR_BUILD = False
+    elif option == '--pyxml':
+        HAS_LMATHDOM = False
+    elif option == '--lxml':
+        HAS_MATHDOM = False
+    else:
+        remove_option = False
+    if remove_option:
+        sys.argv.remove(option)
+
+# HELP MESSAGE
+
+if '--help' in options or '--help-mathdom' in options:
+    print """MathDOM package install options:
+    --name=XXX           : force package name to XXX
+    --contrib-lxml       : include lxml sources in 'contrib/lxml/'  (%s)
+    --no-contrib-lxml    : do not include lxml sources
+    --require-imports    : check if required packages are installed (%s)
+    --no-require-imports : do not check installation
+    --pyxml              : build *only* 'mathdom-pyxml' package
+    --lxml               : build *only* 'mathdom-lxml'  package
+
+    Current build config : lxml (%s), pyxml (%s), forced name (%s)
+    """ % (INCLUDE_LXML_SOURCE, REQUIRE_PACKAGES_FOR_BUILD,
+           HAS_LMATHDOM, HAS_MATHDOM, FORCED_PACKAGE_NAME)
+    try:
+        sys.argv.remove('--help-mathdom')
+        sys.exit(0)
+    except ValueError:
+        pass
+
+# CHECK FOR AVAILABLE PACKAGES
+
+if REQUIRE_PACKAGES_FOR_BUILD:
+    if HAS_LMATHDOM:
+        try:
+            from lxml.etree import SaxTreeBuilder
+        except:
+            print "lxml not installed or not patched."
+            HAS_LMATHDOM = False
+
+    if HAS_MATHDOM:
+        try:
+            from xml import xpath
+        except:
+            print "PyXML not installed."
+            HAS_MATHDOM = False
+
+if INCLUDE_LXML_SOURCE:
+    INCLUDE_LXML_SOURCE = False
+    if HAS_LMATHDOM:
+        try:
+            os.stat(os.path.join(root_dir, 'contrib/lxml'))
+            INCLUDE_LXML_SOURCE = True
+        except OSError:
+            print "lxml source not installed in contrib directory."
+
+# CHECK WHICH PACKAGE TO BUILD
+
+if HAS_MATHDOM and HAS_LMATHDOM:
+    pass
+elif HAS_MATHDOM:
+    PACKAGE_NAME += "-pyxml"
+elif HAS_LMATHDOM:
+    PACKAGE_NAME += "-lxml"
+else:
+    raise RuntimeError, "Package must contain mathml.mathdom and/or mathml.lmathdom module!"
+
+if HAS_LMATHDOM:
+    PACKAGE_DATA.update({
+        'mathml'       : ['schema/mathml2.rng.gz'],
+        'mathml.utils' : ['mathmlc2p.xsl', 'ctop.xsl']
+        })
+    PACKAGES.append('mathml.pmathml')
+
+# BUILD MANIFEST.in
+
+manifest = open(os.path.join(root_dir, 'MANIFEST.in'), 'w')
+manifest.write("""
+include setup.py MANIFEST.in README LICENSE ChangeLog
+recursive-include test *.py
+include mathml/*.py mathml/utils/*.py
+include examples/infix.py
+""")
+if HAS_LMATHDOM:
+    manifest.write("""
+    include lxml.patch examples/ldom.py mathml/schema/mathml2.rng.gz mathml/utils/mathmlc2p.xsl mathml/utils/ctop.xsl
+    include mathml/pmathml/*.py mathml/pmathml/backend/*.py
+    """.replace('    ', ''))
+else:
+    manifest.write("""
+    exclude mathml/lmathdom.py mathml/utils/sax_pmathml.py
+    recursive-exclude mathml/pmathml *
+    """.replace('    ', ''))
+if HAS_MATHDOM:
+    manifest.write("""
+    include examples/dom.py
+    """.replace('    ', ''))
+else:
+    manifest.write("""
+    exclude mathml/mathdom.py
+    """.replace('    ', ''))
+if INCLUDE_LXML_SOURCE:
+    manifest.write("""
+    recursive-include contrib/lxml MANIFEST.in *.txt *.py *.pxd *.pyx *.xml *.mgp
+    """.replace('    ', ''))
+manifest.close()
+
+# RUN SETUP
+
 setup(
-    name='mathdom',
-    version='0.6.3.1',
-    packages=['mathml', 'mathml.utils', 'mathml.pmathml'],
-    package_data = {
-    'mathml'       : ['schema/mathml2.rng.gz'],
-    'mathml.utils' : ['mathmlc2p.xsl', 'ctop.xsl']
-    },
+    name=FORCED_PACKAGE_NAME or PACKAGE_NAME,
+    version=VERSION,
+    packages=PACKAGES,
+    package_data=PACKAGE_DATA,
 
     description='MathDOM - Content MathML in Python',
     long_description="""MathDOM - Content MathML in Python
