@@ -130,7 +130,7 @@ include examples/infix.py
 """)
 if HAS_LMATHDOM:
     manifest.write("""
-    include lxml.patch examples/ldom.py mathml/schema/mathml2.rng.gz mathml/utils/mathmlc2p.xsl mathml/utils/ctop.xsl
+    include lxml*.patch examples/ldom.py mathml/schema/mathml2.rng.gz mathml/utils/mathmlc2p.xsl mathml/utils/ctop.xsl
     include mathml/pmathml/*.py mathml/pmathml/backend/*.py
     """.replace('    ', ''))
 else:
