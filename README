@@ -16,7 +16,7 @@ What is MathDOM?
 
 The package comprises parsers for a subset of Content MathML 2.0 and
 infix terms (using pyparsing [1]). It provides access to the term tree
-through a DOM (based on PyXML/4DOM [2] or, preferable, lxml [3]) and
+through a DOM (based on PyXML/4DOM [2] or, preferably, lxml [3]) and
 allows serialization to Content MathML and literal terms in infix,
 prefix and postfix notation. It supports subclassable input/output
 filters, e.g. for Python terms.
@@ -45,12 +45,13 @@ Current status:
 
 This is currently beta software. The API is mostly stabilizing, but
 may still be subject to changes. The output and DOM APIs will likely
-evolve without major compatibility breaks. The extensible parser API
-is not stable yet.
+evolve without major compatibility breaks. The subclassable parser is
+relatively new and has not had enough test cases to declare it stable.
 
-Please keep in mind that the best way to stabilize an API is to have
-users use it and give feedback. Every comment or suggestion is
-appreciated, as are patches.
+Please keep in mind that the best way to stabilize an API is to use it
+and give feedback. Every comment or suggestion is appreciated, as are
+patches. If you write your own parsers or serializers, feel free to
+submit them.
 
 
 Regarding lxml:
@@ -60,13 +61,15 @@ The lxml based implementation shares most of the code with the PyXML
 one, but replaces the DOM implementation with a patched version of
 lxml [3], an XML API similar to ElementTree [4], implemented on top of
 libxml2 [5]. That makes it much faster than the pure Python
-implementation (just try test/test.py) and it supports more XML
-features, like XSLT and XInclude. Please apply the patch that comes
-with MathDOM if you want to use lxml. The patch should apply to SVN
-versions of lxml that are newer than 0.7. The patch has been submitted
-for inclusion in lxml. You may also consider getting the patched SVN
-version from a branch:
+implementation (just try test/test.py for a comparison) and it
+supports more XML features, like XSLT and XInclude. Please apply the
+patch that comes with MathDOM if you want to use lxml. The patch
+applies to release versions of lxml, currently 0.8. It has been
+submitted for incremental inclusion in lxml. You may also consider
+getting the patched SVN version from a branch:
+
 svn co http://codespeak.net/svn/lxml/branch/scoder1 contrib/lxml
+(contrib/lxml is the local target directory)
 
 
 The files:
@@ -79,7 +82,7 @@ setup.py               - distutils, try "python setup.py install"
 
 * Patching lxml:
 
-lxml.patch             - apply in the lxml source directory (using -p0).
+lxml.patch             - apply in the lxml source directory (use -p0).
 
 
 * Examples are in "examples/":
