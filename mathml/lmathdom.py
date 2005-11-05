@@ -20,6 +20,8 @@ TYPE_MAP = {
     'e-notation' : ENotation
     }
 
+RNG_SCHEMA_FILE = 'mathml2.rng.gz'
+
 STYLESHEET_MAPPING = {
     'mathmlc2p.xsl' : ('mathml',   'pmathml'),
     'ctop.xsl'      : ('mathml',   'pmathml2'),
@@ -85,7 +87,7 @@ MML_RNG = None
 schema_filename = None
 try:
     from os import path
-    schema_filename = path.abspath( path.join(path.dirname(__file__), 'schema', 'mathml2.rng.gz') )
+    schema_filename = path.abspath( path.join(path.dirname(__file__), 'schema', RNG_SCHEMA_FILE) )
     del path
     MML_RNG = RelaxNG( parse(schema_filename) )
 except IOError:
