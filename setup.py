@@ -1,16 +1,21 @@
 from distutils.core import setup
+from distutils.extension import Extension
 import sys, os
 
-VERSION  = '0.6.3.1'
+VERSION  = '0.6.4'
 PACKAGE_NAME = 'mathdom'
 PACKAGES = ['mathml', 'mathml.utils']
 PACKAGE_DATA = {}
+PACKAGE_DIRS = {}
+EXTENSIONS = []
 
 # CONFIG DEFAULTS
 
 FORCED_PACKAGE_NAME=None
 INCLUDE_LXML_SOURCE=False
+LOCAL_LXML=False
 REQUIRE_PACKAGES_FOR_BUILD=False
+ALLOW_LOCAL_LXML_INSTALL=False
 
 # CONFIGURE PACKAGE
 
@@ -29,17 +34,27 @@ try:
 except OSError:
     HAS_MATHDOM = False
 
+try:
+    os.stat(os.path.join(root_dir, 'contrib', 'lxml', 'src', 'lxml', 'etree.c'))
+    HAS_LXML_C = True
+except OSError:
+    HAS_LXML_C = False
+
 # CMD LINE OVERRIDE
 
 options = sys.argv[1:]
+distutils_options = []
 for option in options:
-    remove_option = True
     if option.startswith('--name='):
         FORCED_PACKAGE_NAME=option[7:]
     elif option == '--contrib-lxml':
         INCLUDE_LXML_SOURCE = True
     elif option == '--no-contrib-lxml':
         INCLUDE_LXML_SOURCE = False
+    elif option == '--local-lxml':
+        LOCAL_LXML = True
+    elif option == '--no-local-lxml':
+        LOCAL_LXML = False
     elif option == '--require-imports':
         REQUIRE_PACKAGES_FOR_BUILD = True
     elif option == '--no-require-imports':
@@ -49,9 +64,15 @@ for option in options:
     elif option == '--lxml':
         HAS_MATHDOM = False
     else:
-        remove_option = False
-    if remove_option:
-        sys.argv.remove(option)
+        distutils_options.append(option)
+
+sys.argv[1:] = distutils_options
+
+# special case for multi-step building (i.e. copy/tar and then call setup.py, like in 'bdist*')
+if ALLOW_LOCAL_LXML_INSTALL:
+    if 'build' in distutils_options and distutils_options == options:
+        if HAS_LMATHDOM and HAS_LXML_C:
+            LOCAL_LXML = True
 
 # HELP MESSAGE
 
@@ -61,13 +82,15 @@ if '--help' in options or '--help-mathdom' in options:
     --name=XXX           : force package name to XXX
     --contrib-lxml       : include lxml sources in 'contrib/lxml/'  (%s)
     --no-contrib-lxml    : do not include lxml sources
+    --local-lxml         : build and use local mathml.lxml package  (%s)
+                           THE OPTION --local-lxml IS ONLY FOR TESTING !
     --require-imports    : check if required packages are installed (%s)
     --no-require-imports : do not check installation
     --pyxml              : build *only* 'mathdom-pyxml' package
     --lxml               : build *only* 'mathdom-lxml'  package
 
     Current build config : lxml (%s), pyxml (%s), forced name (%s)
-    """ % (INCLUDE_LXML_SOURCE, REQUIRE_PACKAGES_FOR_BUILD,
+    """ % (INCLUDE_LXML_SOURCE, LOCAL_LXML, REQUIRE_PACKAGES_FOR_BUILD,
            HAS_LMATHDOM, HAS_MATHDOM, FORCED_PACKAGE_NAME)
     try:
         sys.argv.remove('--help-mathdom')
@@ -78,7 +101,7 @@ if '--help' in options or '--help-mathdom' in options:
 # CHECK FOR AVAILABLE PACKAGES
 
 if REQUIRE_PACKAGES_FOR_BUILD:
-    if HAS_LMATHDOM:
+    if HAS_LMATHDOM and not LOCAL_LXML:
         try:
             from lxml.etree import SaxTreeBuilder
         except:
@@ -92,14 +115,12 @@ if REQUIRE_PACKAGES_FOR_BUILD:
             print "PyXML not installed."
             HAS_MATHDOM = False
 
-if INCLUDE_LXML_SOURCE:
-    INCLUDE_LXML_SOURCE = False
-    if HAS_LMATHDOM:
-        try:
-            os.stat(os.path.join(root_dir, 'contrib/lxml'))
-            INCLUDE_LXML_SOURCE = True
-        except OSError:
-            print "lxml source not installed in contrib directory."
+if INCLUDE_LXML_SOURCE or LOCAL_LXML:
+    if not HAS_LXML_C:
+        raise RuntimeError, "lxml source not installed in contrib directory."
+    elif not HAS_LMATHDOM:
+        INCLUDE_LXML_SOURCE = LOCAL_LXML = False
+        print "lmathdom.py not found, ignoring lxml."
 
 # CHECK WHICH PACKAGE TO BUILD
 
@@ -118,6 +139,41 @@ if HAS_LMATHDOM:
         'mathml.utils' : ['mathmlc2p.xsl', 'ctop.xsl']
         })
     PACKAGES.append('mathml.pmathml')
+
+if LOCAL_LXML:
+    PACKAGES.append('mathml.lxml')
+    PACKAGE_DIRS['mathml.lxml'] = 'contrib/lxml/src/lxml'
+
+# BUILD LXML EXTENSION
+
+if LOCAL_LXML:
+    def guess_dirs(xsltconfig_flags, flag):
+        wf, rf, ef = os.popen3('xslt-config %s' % xsltconfig_flags)
+        flags = rf.read()
+        error = ef.read()
+        if error:
+            # cannot find it, just refuse to guess
+            raise RuntimeError, "Cannot guess libxml2 dirs. Try configuring it manually."
+        # get all returned flags and return them
+        parts = flags.split()
+        result = []
+        for part in parts:
+            if part.startswith(flag):
+                result.append(part[2:])
+        return result
+
+    include_dirs = guess_dirs('--cflags', '-I')
+    library_dirs = guess_dirs('--libs', '-L')
+
+    EXTENSIONS.append(
+        Extension('mathml.lxml.etree',
+                  sources=['contrib/lxml/src/lxml/etree.c'],
+                  include_dirs=include_dirs,
+                  library_dirs=library_dirs,
+                  runtime_library_dirs=library_dirs,
+                  libraries=['xml2', 'xslt'],
+                  extra_compile_args=['-w'])
+        )
 
 # BUILD MANIFEST.in
 
@@ -147,9 +203,15 @@ else:
     exclude mathml/mathdom.py
     """.replace('    ', ''))
 if INCLUDE_LXML_SOURCE:
-    manifest.write("""
-    recursive-include contrib/lxml MANIFEST.in *.txt *.py *.pxd *.pyx *.xml *.mgp
-    """.replace('    ', ''))
+    if LOCAL_LXML:
+        manifest.write("""
+        recursive-include contrib/lxml *.txt *.mgp
+        include contrib/lxml/src/lxml/*.py contrib/lxml/src/lxml/*.c
+        """.replace('    ', ''))
+    else:
+        manifest.write("""
+        recursive-include contrib/lxml MANIFEST.in *.txt *.py *.pxd *.pyx *.xml *.mgp
+        """.replace('    ', ''))
 manifest.close()
 
 # RUN SETUP
@@ -159,6 +221,8 @@ setup(
     version=VERSION,
     packages=PACKAGES,
     package_data=PACKAGE_DATA,
+    package_dir=PACKAGE_DIRS,
+    ext_modules=EXTENSIONS,
 
     description='MathDOM - Content MathML in Python',
     long_description="""MathDOM - Content MathML in Python
