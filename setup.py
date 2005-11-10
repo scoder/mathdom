@@ -273,11 +273,9 @@ New in version 0.6.1:
 
 New in version 0.6:
 
-- RelaxNG validation
-- Presentation MathML export (based on XSLT)
+- RelaxNG validation (lxml)
+- Presentation MathML export (based on XSLT/lxml)
 - stricter spec conformance (encloses MathML output in <math> tag
-
-The first two require lxml, PyXML does not support them.
 """,
 
     author='Stefan Behnel',
