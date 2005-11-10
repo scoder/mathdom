@@ -251,6 +251,12 @@ the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
 
+New in version 0.6.4:
+
+- Updated setup.py script to use setuptools if available
+- Support for splitting package into two PyXML and lxml dependent packages
+- Now builds patched lxml during install
+
 New in version 0.6.3.1:
 
 - Fixes a number of bugs in mathdom and lmathdom modules
