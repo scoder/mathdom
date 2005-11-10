@@ -1,5 +1,9 @@
-from distutils.core import setup
-from distutils.extension import Extension
+try:
+    from setuptools import setup
+    from setuptools.extension import Extension
+except ImportError:
+    from distutils.core import setup
+    from distutils.extension import Extension
 import sys, os
 
 VERSION  = '0.6.4'
@@ -7,15 +11,14 @@ PACKAGE_NAME = 'mathdom'
 PACKAGES = ['mathml', 'mathml.utils']
 PACKAGE_DATA = {}
 PACKAGE_DIRS = {}
-EXTENSIONS = []
+EXTENSIONS   = []
 
 # CONFIG DEFAULTS
 
 FORCED_PACKAGE_NAME=None
-INCLUDE_LXML_SOURCE=False
 LOCAL_LXML=False
+NO_LOCAL_LXML=False
 REQUIRE_PACKAGES_FOR_BUILD=False
-ALLOW_LOCAL_LXML_INSTALL=False
 
 # CONFIGURE PACKAGE
 
@@ -26,7 +29,8 @@ try:
     os.stat(os.path.join(src_dir, 'lmathdom.py'))
     HAS_LMATHDOM = True
 except OSError:
-    HAS_LMATHDOM = False
+    HAS_LMATHDOM  = False
+    NO_LOCAL_LXML = True
 
 try:
     os.stat(os.path.join(src_dir, 'mathdom.py'))
@@ -47,14 +51,11 @@ distutils_options = []
 for option in options:
     if option.startswith('--name='):
         FORCED_PACKAGE_NAME=option[7:]
-    elif option == '--contrib-lxml':
-        INCLUDE_LXML_SOURCE = True
-    elif option == '--no-contrib-lxml':
-        INCLUDE_LXML_SOURCE = False
     elif option == '--local-lxml':
         LOCAL_LXML = True
     elif option == '--no-local-lxml':
         LOCAL_LXML = False
+        NO_LOCAL_LXML = True
     elif option == '--require-imports':
         REQUIRE_PACKAGES_FOR_BUILD = True
     elif option == '--no-require-imports':
@@ -68,10 +69,10 @@ for option in options:
 
 sys.argv[1:] = distutils_options
 
-# special case for multi-step building (i.e. copy/tar and then call setup.py, like in 'bdist*')
-if ALLOW_LOCAL_LXML_INSTALL:
-    if 'build' in distutils_options and distutils_options == options:
-        if HAS_LMATHDOM and HAS_LXML_C:
+# hack to make multi step building work (like in 'bdist_rpm' target)
+if distutils_options == options:
+    if 'build' in distutils_options or 'install' in distutils_options:
+        if HAS_LMATHDOM and HAS_LXML_C and not NO_LOCAL_LXML:
             LOCAL_LXML = True
 
 # HELP MESSAGE
@@ -80,17 +81,15 @@ if '--help' in options or '--help-mathdom' in options:
     print """MathDOM package install options:
     --help-mathdom       : show this usage information and exit
     --name=XXX           : force package name to XXX
-    --contrib-lxml       : include lxml sources in 'contrib/lxml/'  (%s)
-    --no-contrib-lxml    : do not include lxml sources
-    --local-lxml         : build and use local mathml.lxml package  (%s)
-                           THE OPTION --local-lxml IS ONLY FOR TESTING !
-    --require-imports    : check if required packages are installed (%s)
+    --local-lxml         : include bundled lxml package in build    (%s)
+    --no-local-lxml      : prevent bundled lxml from being built    (%s)
+    --require-imports    : build depending on installed PyXML/lxml  (%s)
     --no-require-imports : do not check installation
     --pyxml              : build *only* 'mathdom-pyxml' package
     --lxml               : build *only* 'mathdom-lxml'  package
 
     Current build config : lxml (%s), pyxml (%s), forced name (%s)
-    """ % (INCLUDE_LXML_SOURCE, LOCAL_LXML, REQUIRE_PACKAGES_FOR_BUILD,
+    """ % (LOCAL_LXML, NO_LOCAL_LXML, REQUIRE_PACKAGES_FOR_BUILD,
            HAS_LMATHDOM, HAS_MATHDOM, FORCED_PACKAGE_NAME)
     try:
         sys.argv.remove('--help-mathdom')
@@ -115,12 +114,12 @@ if REQUIRE_PACKAGES_FOR_BUILD:
             print "PyXML not installed."
             HAS_MATHDOM = False
 
-if INCLUDE_LXML_SOURCE or LOCAL_LXML:
+if LOCAL_LXML:
     if not HAS_LXML_C:
         raise RuntimeError, "lxml source not installed in contrib directory."
-    elif not HAS_LMATHDOM:
-        INCLUDE_LXML_SOURCE = LOCAL_LXML = False
-        print "lmathdom.py not found, ignoring lxml."
+    if not HAS_LMATHDOM:
+        LOCAL_LXML = False
+        print "lmathdom.py not found, ignoring bundled lxml."
 
 # CHECK WHICH PACKAGE TO BUILD
 
@@ -141,8 +140,8 @@ if HAS_LMATHDOM:
     PACKAGES.append('mathml.pmathml')
 
 if LOCAL_LXML:
-    PACKAGES.append('mathml.lxml')
-    PACKAGE_DIRS['mathml.lxml'] = 'contrib/lxml/src/lxml'
+    PACKAGES.append('lxml')
+    PACKAGE_DIRS['lxml'] = 'contrib/lxml/src/lxml'
 
 # BUILD LXML EXTENSION
 
@@ -166,7 +165,7 @@ if LOCAL_LXML:
     library_dirs = guess_dirs('--libs', '-L')
 
     EXTENSIONS.append(
-        Extension('mathml.lxml.etree',
+        Extension('lxml.etree',
                   sources=['contrib/lxml/src/lxml/etree.c'],
                   include_dirs=include_dirs,
                   library_dirs=library_dirs,
@@ -202,7 +201,7 @@ else:
     manifest.write("""
     exclude mathml/mathdom.py
     """.replace('    ', ''))
-if INCLUDE_LXML_SOURCE:
+if not NO_LOCAL_LXML:
     if LOCAL_LXML:
         manifest.write("""
         recursive-include contrib/lxml *.txt *.mgp
@@ -210,7 +209,7 @@ if INCLUDE_LXML_SOURCE:
         """.replace('    ', ''))
     else:
         manifest.write("""
-        recursive-include contrib/lxml MANIFEST.in *.txt *.py *.pxd *.pyx *.xml *.mgp
+        recursive-include contrib/lxml MANIFEST.in *.txt *.c *.py *.pxd *.pyx *.xml *.mgp
         """.replace('    ', ''))
 manifest.close()
 
@@ -254,7 +253,7 @@ SQL/Java/Lisp/*your-favourite* easy.
 
 New in version 0.6.3.1:
 
-- Fixes for a number of bugs in mathdom and lmathdom modules
+- Fixes a number of bugs in mathdom and lmathdom modules
 
 New in version 0.6.2:
 
