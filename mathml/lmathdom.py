@@ -10,6 +10,7 @@ from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
                         XPathElementEvaluator, SaxTreeBuilder)
 
 from mathml           import MATHML_NAMESPACE_URI, UNARY_FUNCTIONS
+from mathml.utils     import STYLESHEETS as UTILS_STYLESHEETS
 from mathml.xmlterm   import SaxTerm, dom_to_tree, serialize_dom
 from mathml.datatypes import Decimal, Complex, Rational, ENotation
 
@@ -23,22 +24,20 @@ TYPE_MAP = {
 RNG_SCHEMA_FILE = 'mathml2.rng.gz'
 
 STYLESHEET_MAPPING = {
-    'mathmlc2p.xsl' : ('mathml',   'pmathml'),
-    'ctop.xsl'      : ('mathml',   'pmathml2'),
-    'pMML2SVG.xsl'  : ('pmathml',  'svg')
+    'mathmlc2p' : ('mathml',   'pmathml'),
+    'ctop'      : ('mathml',   'pmathml2'),
+    'pMML2SVG'  : ('pmathml',  'svg')
     }
 
 STYLESHEET_TRANSFORMERS = {}
 
-# try to read XSL stylesheets
+# prepare XSL stylesheets
 STYLESHEETS = {}
-xslt_filename = None
 from os import path
-for xsl_file, (input_type, output_type) in STYLESHEET_MAPPING.iteritems():
+for xsl_name, (input_type, output_type) in STYLESHEET_MAPPING.iteritems():
     try:
-        xslt_filename = path.abspath( path.join(path.dirname(__file__), 'utils', xsl_file) )
-        STYLESHEETS[output_type] = (input_type, XSLT( parse(xslt_filename) ))
-    except IOError: # file not found => not available
+        STYLESHEETS[output_type] = (input_type, UTILS_STYLESHEETS[xsl_name])
+    except KeyError: # not available
         pass
     except Exception, e:
         print "Error loading stylesheet %s:" % xsl_file, e
@@ -64,7 +63,7 @@ for output_type, (input_type, xslt) in STYLESHEETS.items():
         xslts.insert(0, xslt)
         output_type = input_type
 
-del STYLESHEETS, l, xslt, xslts, xslt_filename, xsl_file, input_type, output_type, path # clean up
+del STYLESHEETS, l, xslt, xslts, xsl_name, input_type, output_type, path # clean up
 
 
 # try to read XML Schema for MathML validation (doesn't currently work because of libxml2)
