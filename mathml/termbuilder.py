@@ -59,7 +59,7 @@ class TermBuilder(object):
         if operator == 'name' or operator[:6] == 'const:':
             return children
         return [ ' '.join(operand)
-                 for operand in starmap(self._recursive_build, izip(children, repeat(status))) ]
+                 for operand in imap(self._recursive_build, children, repeat(status)) ]
 
     def _handle(self, operator, operands, status):
         "Unknown operators (including functions) end up here."
