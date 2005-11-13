@@ -10,9 +10,11 @@ from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
                         XPathElementEvaluator, SaxTreeBuilder)
 
 from mathml           import MATHML_NAMESPACE_URI, UNARY_FUNCTIONS
-from mathml.utils     import STYLESHEETS as UTILS_STYLESHEETS
 from mathml.xmlterm   import SaxTerm, dom_to_tree, serialize_dom
 from mathml.datatypes import Decimal, Complex, Rational, ENotation
+
+from mathml.utils     import STYLESHEETS as UTILS_STYLESHEETS
+from mathml.schema    import SCHEMAS
 
 TYPE_MAP = {
     'real'       : Decimal,
@@ -20,8 +22,6 @@ TYPE_MAP = {
     'rational'   : Rational,
     'e-notation' : ENotation
     }
-
-RNG_SCHEMA_FILE = 'mathml2.rng.gz'
 
 STYLESHEET_MAPPING = {
     'mathmlc2p' : ('mathml',   'pmathml'),
@@ -40,7 +40,7 @@ for xsl_name, (input_type, output_type) in STYLESHEET_MAPPING.iteritems():
     except KeyError: # not available
         pass
     except Exception, e:
-        print "Error loading stylesheet %s:" % xsl_file, e
+        print "Error loading stylesheet %s:" % xsl_name, e
         pass
 
 xslt = None
@@ -82,20 +82,7 @@ MML_SCHEMA = None
 ## del schema_filename
 
 # try to read RelaxNG schema for MathML validation
-MML_RNG = None
-schema_filename = None
-try:
-    from os import path
-    schema_filename = path.abspath( path.join(path.dirname(__file__), 'schema', RNG_SCHEMA_FILE) )
-    del path
-    MML_RNG = RelaxNG( parse(schema_filename) )
-except IOError:
-    pass
-except Exception, e:
-    print "Error reading RelaxNG schema for MathML:", e
-    pass
-del schema_filename
-
+MML_RNG = SCHEMAS.get('mathml2')
 
 _MATH_NS_DICT = {u'math' : MATHML_NAMESPACE_URI}
 _NAMESPACE    = u"{%s}" % MATHML_NAMESPACE_URI
