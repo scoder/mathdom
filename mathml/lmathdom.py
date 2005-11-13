@@ -6,7 +6,7 @@ import sys
 from StringIO  import StringIO
 
 from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
-                        register_namespace_classes, XSLT, XMLSchema, RelaxNG,
+                        Namespace, XSLT, XMLSchema, RelaxNG,
                         XPathElementEvaluator, SaxTreeBuilder)
 
 from mathml           import MATHML_NAMESPACE_URI, UNARY_FUNCTIONS
@@ -492,6 +492,9 @@ class MathDOM(object):
             other_namespaces = _MATH_NS_DICT
         return self._etree.xpath(expression, other_namespaces)
 
+    def xslt(self, stylesheet):
+        return self._etree.xslt(stylesheet)
+
     def __getattr__(self, name):
         return getattr(self._etree, name)
 
@@ -511,19 +514,29 @@ class MathDOM(object):
         cn_tag.set_value(value)
         return cn_tag
 
+# serializer function for lxml.XSLT
+
+def xslt_serialize(_, nodes, output_type):
+    return ''.join( node.serialize(output_type) for node in nodes )
 
 # register namespace implementation
 
-classes = [ (cls.IMPLEMENTS.split(), cls) for cls in vars().values()
-            if isinstance(cls, type) and issubclass(cls, MathElement) and hasattr(cls, 'IMPLEMENTS') ]
+def register_classes(global_class_dict):
+    classes = [ (cls.IMPLEMENTS.split(), cls) for cls in global_class_dict.values()
+                if isinstance(cls, type) and issubclass(cls, MathElement) and hasattr(cls, 'IMPLEMENTS') ]
 
-class_sort = [ (len(item[0]), i, item) for i, item in enumerate(classes) ]
-class_sort.sort(reverse=True) # move more generic implementations to the front
+    class_sort = [ (len(item[0]), i, item) for i, item in enumerate(classes) ]
+    class_sort.sort(reverse=True) # move more generic implementations to the front
 
-class_dict = {}
-for item in class_sort:
-    tags, cls = item[2]
-    class_dict.update((tag, cls) for tag in tags)
+    class_dict = {}
+    for item in class_sort:
+        tags, cls = item[2]
+        class_dict.update((tag, cls) for tag in tags)
 
-class_dict[None] = MathElement
-register_namespace_classes(MATHML_NAMESPACE_URI, class_dict)
+    class_dict[None] = MathElement
+    lxml_math_namespace = Namespace(MATHML_NAMESPACE_URI)
+    lxml_math_namespace.update(class_dict)
+    lxml_math_namespace['serialize'] = xslt_serialize
+
+register_classes(vars())
+del register_classes

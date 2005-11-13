@@ -184,6 +184,27 @@ def build_test_class(term_type, terms, mathdom):
         test.__doc__ = docstr("validate", term)
         return test
 
+    def build_xslt_serialize_test(term):
+        if not hasattr(mathdom, 'xsltify'):
+            return None
+        from lxml import etree
+        stylesheet = etree.XSLT(etree.ElementTree(etree.XML('''
+        <xsl:stylesheet version="1.0"
+             xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+             xmlns:math="http://www.w3.org/1998/Math/MathML">
+          <xsl:output method="text" encoding="UTF-8"/>
+          <xsl:template match="math:math">
+            <xsl:value-of select="math:serialize(., \'python\')" />
+          </xsl:template>
+        </xsl:stylesheet>
+        ''')))
+        def test(self):
+            doc = etree.ElementTree(mathdom.fromString(term, term_type).getroot())
+            pyterm = stylesheet.tostring( stylesheet.apply(doc) )
+            self.assertEquals(pyeval( (term_type, term) ).next(), eval(pyterm))
+        test.__doc__ = docstr("xslt_ext", term)
+        return test
+
     def build_parser_test(term):
         def test(self):
             self.assertRaises(ParseException, mathdom.fromString, term, term_type)
@@ -211,7 +232,7 @@ def build_test_class(term_type, terms, mathdom):
 
     tests.update(
         (next_test_name(), test_builder(term))
-        for test_builder in (build_dom_test_method, build_validate_test)
+        for test_builder in (build_dom_test_method, build_validate_test, build_xslt_serialize_test)
         for term, result in valid_terms
         )
 
