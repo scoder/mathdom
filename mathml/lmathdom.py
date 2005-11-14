@@ -65,21 +65,8 @@ for output_type, (input_type, xslt) in STYLESHEETS.items():
 
 del STYLESHEETS, l, xslt, xslts, xsl_name, input_type, output_type, path # clean up
 
-
-# try to read XML Schema for MathML validation (doesn't currently work because of libxml2)
+# ignore XML Schema for MathML validation (doesn't currently work because of libxml2)
 MML_SCHEMA = None
-## schema_filename = None
-## try:
-##     from os import path
-##     schema_filename = path.abspath( path.join(path.dirname(__file__), 'schema', 'mathml2-content.xsd') )
-##     del path
-##     MML_SCHEMA = XMLSchema( parse(schema_filename) )
-## except IOError:
-##     pass
-## except Exception, e:
-## #    print e
-##     pass
-## del schema_filename
 
 # try to read RelaxNG schema for MathML validation
 MML_RNG = SCHEMAS.get('mathml2')
