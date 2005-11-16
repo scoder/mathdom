@@ -1,3 +1,7 @@
+2005-11-16  scoder  <scoder@toaster>
+
+	* pyterm.py: fix: Python uses '==' for comparison
+
 2005-11-14  scoder  <scoder@toaster>
 
 	* mathml/lmathdom.py: clean up unused xml schema related stuff
