@@ -17,6 +17,7 @@ class PyTermBuilder(InfixTermBuilder):
 
     _OPERATOR_MAP = {
         '^' : '**',
+        '=' : '==',
         }
     map_operator = _OPERATOR_MAP.get
 
