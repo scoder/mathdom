@@ -6,7 +6,7 @@ except ImportError:
     from distutils.extension import Extension
 import sys, os
 
-VERSION  = '0.6.4'
+VERSION  = '0.6.4.1'
 PACKAGE_NAME = 'mathdom'
 PACKAGES = ['mathml', 'mathml.utils']
 PACKAGE_DATA = {}

@@ -1,3 +1,89 @@
+2005-11-14  scoder  <scoder@toaster>
+
+	* mathml/lmathdom.py: clean up unused xml schema related stuff
+
+2005-11-13  scoder  <scoder@toaster>
+
+	* mathml/schema/__init__.py: RelocatableRelaxNG is now defined in lxml
+
+	* mathml/utils/sqlterm.py: simplistic SQL term serializer
+
+	* mathml/lmathdom.py, mathml/schema/__init__.py:
+	import schema directory as module
+
+	* mathml/lmathdom.py, test/test.py:
+	migrated to new lxml developer version to support 'serialize' extension function in XSLT
+
+2005-11-11  scoder  <scoder@toaster>
+
+	* mathml/termbuilder.py: clean up
+
+	* mathml/lmathdom.py, mathml/utils/__init__.py:
+	use STYLESHEETS import to access xslt directory
+
+2005-11-10  scoder  <scoder@toaster>
+
+	* setup.py: docs
+
+	* setup.py: describe changes for 0.6.4
+
+	* setup.py:
+	use setuptools if available, build lxml into lxml package (not mathml.lxml)
+
+2005-11-07  scoder  <scoder@toaster>
+
+	* lxml.patch: removed lxml.patch from CVS
+
+	* setup.py: support building lxml locally into mathml.lxml
+
+2005-11-05  scoder  <scoder@toaster>
+
+	* setup.py: include lxml*.patch instead of lxml.patch
+
+	* README: notes on API stability, lxml patch is against 0.8
+
+	* mathml/lmathdom.py: tiny clean up
+
+2005-11-04  scoder  <scoder@toaster>
+
+	* html/copy.sh: do some formatting on spaces in web page before upload
+
+	* html/MathDOM.html: link lxml patch to SF download page
+
+	* setup.py: show help option itself in --help-mathdom
+
+	* html/MathDOM.html, html/copy.sh:
+	change link to patch: use SF packages
+
+	* html/MathDOM.html: more on lxml vs. PyXML
+
+	* mathml/mathdom.py, mathml/xmlterm.py:
+	implement some ElementTree API functions in mathdom DOM elements
+
+	* README: change SVN remark in README
+
+	* MANIFEST.in, setup.py:
+	make setup.py configurable, allow package split for lxml *or* PyXML
+
+2005-11-03  scoder  <scoder@toaster>
+
+	* setup.py: mention bug fixes in 0.6.3.x
+
+	* README: mention PyMathML author
+
+	* ChangeLog, setup.py: 0.6.3.1
+
+	* mathml/lmathdom.py: fix lxml import bug
+
+	* ChangeLog: 0.6.3
+
+	* mathml/utils/sax_pmathml.py: one more pychecker fix
+
+	* ChangeLog, setup.py: 0.6.3
+
+	* mathml/lmathdom.py, mathml/mathdom.py, mathml/termparser.py:
+	pychecker fixes
+
 2005-11-03  scoder  <scoder@toaster>
 
 	* setup.py: 0.6.3.1
