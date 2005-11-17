@@ -8,7 +8,7 @@ import sys, os
 
 VERSION  = '0.6.4.1'
 PACKAGE_NAME = 'mathdom'
-PACKAGES = ['mathml', 'mathml.utils']
+PACKAGES = ['mathml', 'mathml.utils', 'mathml.schema']
 PACKAGE_DATA = {}
 PACKAGE_DIRS = {}
 EXTENSIONS   = []
