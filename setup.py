@@ -6,7 +6,7 @@ except ImportError:
     from distutils.extension import Extension
 import sys, os
 
-VERSION  = '0.6.4.1'
+VERSION  = '0.6.5'
 PACKAGE_NAME = 'mathdom'
 PACKAGES = ['mathml', 'mathml.utils', 'mathml.schema']
 PACKAGE_DATA = {}
@@ -69,11 +69,11 @@ for option in options:
 
 sys.argv[1:] = distutils_options
 
-# hack to make multi step building work (like in 'bdist_rpm' target)
-if distutils_options == options:
-    if 'build' in distutils_options or 'install' in distutils_options:
-        if HAS_LMATHDOM and HAS_LXML_C and not NO_LOCAL_LXML:
-            LOCAL_LXML = True
+## # hack to make multi step building work (like in 'bdist_rpm' target)
+## if distutils_options == options:
+##     if 'build' in distutils_options or 'install' in distutils_options:
+##         if HAS_LMATHDOM and HAS_LXML_C and not NO_LOCAL_LXML:
+##             LOCAL_LXML = True
 
 # HELP MESSAGE
 
@@ -185,7 +185,7 @@ include examples/infix.py
 """)
 if HAS_LMATHDOM:
     manifest.write("""
-    include lxml*.patch examples/ldom.py mathml/schema/mathml2.rng.gz mathml/utils/mathmlc2p.xsl mathml/utils/ctop.xsl
+    include examples/ldom.py mathml/schema/mathml2.rng.gz mathml/utils/mathmlc2p.xsl mathml/utils/ctop.xsl
     include mathml/pmathml/*.py mathml/pmathml/backend/*.py
     """.replace('    ', ''))
 else:
