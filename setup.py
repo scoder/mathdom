@@ -180,7 +180,7 @@ manifest = open(os.path.join(root_dir, 'MANIFEST.in'), 'w')
 manifest.write("""
 include setup.py MANIFEST.in README LICENSE ChangeLog
 recursive-include test *.py
-include mathml/*.py mathml/utils/*.py
+include mathml/*.py mathml/utils/*.py mathml/schema/*.py
 include examples/infix.py
 """)
 if HAS_LMATHDOM:
