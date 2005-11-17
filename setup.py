@@ -251,6 +251,11 @@ the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
 
+New in version 0.6.5:
+
+- XSLT extension function to include literal terms in output
+- bug fix in Python term serializer
+
 New in version 0.6.4:
 
 - Updated setup.py script to use setuptools if available
