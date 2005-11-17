@@ -2,56 +2,41 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 
-
-  
   <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-
-  
-
-
-  
   <title>MathDOM - Content MathML in Python</title>
+
+
   <meta name="author" content="Stefan Behnel" />
 
-
-  
   <link href="codestyle.css" type="text/css" rel="stylesheet" />
+
 </head>
 
 
 <body style="direction: ltr;">
 
-
 <img style="width: 77px; height: 141px; margin-right: 10px; margin-bottom: 5px; float: left;" src="logo.png" alt="MathDOM logo" align="left" />
 <h1>MathDOM - Content MathML in Python</h1>
-
 
 <div style="position: absolute; top: 5px; right: 5px;">
 <!--SUPPORTLOGO--></div>
 
-
 <ul>
-
 
   <li><a href="http://sourceforge.net/projects/mathdom">Sourceforge
 project page</a></li>
 
-
   <li><a href="http://sourceforge.net/project/showfiles.php?group_id=149323">Download
 from Sourceforge</a></li>
-
 
   <li>Current version:<!--CURRENT--> 0.3.0<!--/CURRENT-->
     <a href="http://prdownloads.sourceforge.net/mathdom/mathdom-0.5.3.tar.gz?download">download
 MathDOM</a>, <a href="http://sourceforge.net/project/showfiles.php?group_id=149323&amp;package_id=167214">
-download lxml patch</a><br />
-
+download enhanced lxml</a><br />
 
   </li>
 
-
 </ul>
-
 
 <p>MathDOM is a set of Python 2.4 modules (using <a href="http://pyxml.sourceforge.net/">PyXML</a> or <a href="http://codespeak.net/lxml/">lxml</a>, and <a href="http://pyparsing.sourceforge.net/">pyparsing</a>)
 that import
@@ -61,19 +46,17 @@ DOM. It currently parses
 MathML and literal infix terms into a DOM or lxml document and
 writes out MathML and literal infix/prefix/postfix/Python terms.
 The DOM elements are enhanced by domain specific methods that make
-using the DOM a little easier. Input parsers and output converters are easily extensible.<br />
+using the DOM a little easier. Input parsers and output converters are
+easily extensible.<br />
 
-
-Version 0.6 extends the lxml version with an XSLT-based output filter for <a href="http://www.w3.org/TR/MathML2/chapter3.html">Presentational
+Version 0.6 extends the lxml version with an XSLT-based output filter
+for <a href="http://www.w3.org/TR/MathML2/chapter3.html">Presentational
 MathML</a> and <a href="http://relaxng.org/tutorial.html">RelaxNG</a>-based
 document validation. PyXML supports neither of these.<br />
 
-
 </p>
 
-
 <h2 style="clear: left;">What is it good for?</h2>
-
 
 <p>You can call it the shortest path between different term
 representations and a Content MathML DOM. Ever noticed the annoying
@@ -85,175 +68,132 @@ but don't change the model. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 C/Fortran/SQL/yourfavourite easier.</p>
 
-
 <h2>A quick example</h2>
-
 
 <table class="code_default" border="0" cellpadding="0" cellspacing="3">
 
-
   <tbody>
-
 
     <tr>
 
-
       <td><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_word">from</span><span class="p_default"> </span><span class="p_identifier">mathml</span><span class="p_operator">.</span><span class="p_identifier">lmathdom</span><span class="p_default"> </span><span class="p_word">import</span><span class="p_default"> </span><span class="p_identifier">MathDOM</span><span class="p_default"> </span></td>
-
 
       <td class="p_commentline"># use lxml
 implementation</td>
 
-
     </tr>
-
 
     <tr>
 
-
       <td><span class="p_default"></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_default"> </span><span class="p_operator">=</span><span class="p_default"> </span><span class="p_identifier">MathDOM</span><span class="p_operator">.</span><span class="p_identifier">fromString</span><span class="p_operator">(</span><span class="p_string">"+2^x+4*-5i/6"</span><span class="p_operator">,</span><span class="p_string">"infix_term"</span><span class="p_operator">)</span></td>
-
 
       <td class="p_commentline"># parse infix
 term</td>
 
-
     </tr>
-
 
     <tr>
 
-
       <td><span class="p_default"></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_word">for</span><span class="p_default"> </span><span class="p_identifier">apply_tag</span><span class="p_default"> </span><span class="p_word">in</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_operator">.</span><span class="p_identifier">xpath</span><span class="p_operator">(</span><span class="p_character">u'//math:apply[math:plus]'</span><span class="p_operator">):</span></td>
-
 
       <td class="p_commentline"># replace '+'
 with '-'</td>
 
-
     </tr>
 
-
     <tr>
-
 
       <td><span class="p_operator">...</span><span class="p_default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="p_identifier">apply_tag</span><span class="p_operator">.</span><span class="p_identifier">set_operator</span><span class="p_operator">(</span><span class="p_character">u'minus'</span><span class="p_operator">)</span></td>
 
-
       <td> </td>
-
 
     </tr>
 
-
     <tr>
-
 
       <td><span class="p_default"></span><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_operator">[</span><span class="p_default"> </span><span class="p_identifier">n</span><span class="p_operator">.</span><span class="p_identifier">value</span><span class="p_operator">()</span><span class="p_default">
       </span><span class="p_word">for</span><span class="p_default"> </span><span class="p_identifier">n</span><span class="p_default">
       </span><span class="p_word">in</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_operator">.</span><span class="p_identifier">xpath</span><span class="p_operator">(</span><span class="p_character">u'//math:cn'</span><span class="p_operator">)</span><span class="p_default">
       </span><span class="p_operator">]</span></td>
 
-
       <td class="p_commentline"># find numbers</td>
-
 
     </tr>
 
-
     <tr>
-
 
       <td><span class="p_operator">[</span><span class="p_number">2</span><span class="p_operator">,</span><span class="p_default"> </span><span class="p_number">4</span><span class="p_operator">,</span><span class="p_default">
       </span><span class="p_number">Complex(0-5j)</span><span class="p_operator">,</span><span class="p_default">
       </span><span class="p_number">6</span><span class="p_operator">]</span></td>
 
-
       <td> </td>
-
 
     </tr>
 
-
     <tr>
 
-
       <td><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_word">from</span><span class="p_default"> </span><span class="p_identifier">mathml</span><span class="p_operator">.</span><span class="p_identifier">utils</span><span class="p_default"> </span><span class="p_word">import</span><span class="p_default"> </span><span class="p_identifier">pyterm</span></td>
-
 
       <td class="p_commentline"># register Python term
 builder</td>
 
-
     </tr>
-
 
     <tr>
 
-
       <td><span class="p_operator">&gt;&gt;&gt;</span><span class="p_default"> </span><span class="p_identifier">doc</span><span class="p_operator">.</span><span class="p_identifier">serialize</span><span class="p_operator">(</span><span class="p_string">"python"</span><span class="p_operator">)</span></td>
-
 
       <td class="p_commentline"># serialize to
 Python term</td>
 
-
     </tr>
 
-
     <tr>
-
 
       <td><span class="p_character">u'2 ** x - 4 *
 (-5j) / 6'</span></td>
 
-
       <td> </td>
-
 
     </tr>
 
-
-  
   </tbody>
 </table>
 
-
 <br />
-
 
 Simple, isn't it ?
 <h2>Why PyXML <span style="font-style: italic;">and</span>
 lxml?</h2>
 
-
 While basic XML support is part of the Python distribution, PyXML
 extends it to a largely DOM Level-2 compliant API written
-in (almost) pure Python, that is available in <a href="http://www.python.org">CPython</a> and <a href="http://www.jython.org">Jython</a>. This implementation does, however, have the
+in (almost) pure Python, that is available in <a href="http://www.python.org">CPython</a> and <a href="http://www.jython.org">Jython</a>. This
+implementation does, however, have the
 disadvantage of being rather slow and very, very un-pythonic. Apart
 from DOM, SAX and XPath, it supports none of the other important
 XML specifications.<br />
-
 
 <span style="font-weight: bold;">Entering</span> <a href="http://codespeak.net/lxml/" style="font-weight: bold;">lxml</a><span style="font-weight: bold;">.</span> Based on <a href="http://xmlsoft.org/">libxml2</a>, lxml supports
 basically all major XML technologies (like XPath, XSLT, XInclude, etc.)
 and combines
 them with the <a href="http://effbot.org/zone/element-index.htm">ElementTree</a>-API.
 I
-wrote a few <a href="http://sourceforge.net/project/showfiles.php?group_id=149323&amp;package_id=167214">patches for lxml</a>
-that make
-it even more convenient for implementing namespaces - like MathML.
-The relevant patches are part of the MathDOM distribution and I'm actively working on merging them back into lxml.<br />
-
+am helping to develop an <a href="http://sourceforge.net/project/showfiles.php?group_id=149323&amp;package_id=167214">enhanced
+version of lxml</a>
+that makes
+it more convenient for implementing namespaces - like MathML.
+This version is part of the MathDOM distribution and I'm actively
+working on merging the changes back into the official releases.<br />
 
 <span style="font-weight: bold;">So, why both?</span>
 The lxml
-implementation is newer and will likely take over the lead in the
+implementation is newer and takes the lead in the
 further evolution of MathDOM. Still, the PyXML implementation is
 written in pure Python and can therefore be used where lxml/libxml2
-is not available. The MathDOM package is easily split up into independent packages depending on lxml or PyXML only.
+is not available. The MathDOM package is easily split up into
+independent packages depending on lxml or PyXML only.
 <h2>MathML</h2>
-
 
 <p><a href="http://www.w3.org/TR/MathML2/">MathML</a>
 is an XML
@@ -265,9 +205,7 @@ received a lot of support in mathematical software as well as web
 browsers and represents a comfortable layer for the semantic
 exchange of mathematics - see <a href="http://www.w3.org/Math/Software/">http://www.w3.org/Math/Software/</a></p>
 
-
 <h2>And now, Python has it, too! :)</h2>
-
 
 <p>I'd like to invite everyone who is interested to play with it
 and to comment on the evolving state. Note that
@@ -276,12 +214,9 @@ term representation. It does, however, handle pretty complex things
 and I'd be glad to see currently unsupported terms and MathML
 documents that are worth being supported in the future.</p>
 
-
 <p align="right">&copy; Stefan Behnel, 2005<br />
 
-
 <!--XHTMLLOGO--><!--SFLOGO--><!--SUPPORTLOGO--></p>
-
 
 </body>
 </html>

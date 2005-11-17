@@ -14,12 +14,14 @@ http://mathdom.sourceforge.net
 What is MathDOM?
 ----------------
 
+Terms, there and back again.
+
 The package comprises parsers for a subset of Content MathML 2.0 and
 infix terms (using pyparsing [1]). It provides access to the term tree
-through a DOM (based on PyXML/4DOM [2] or, preferably, lxml [3]) and
-allows serialization to Content MathML and literal terms in infix,
-prefix and postfix notation. It supports subclassable input/output
-filters, e.g. for Python terms.
+through a DOM (based on PyXML/4DOM [2]) or, preferably, the
+ElementTree API on top of lxml [3] and allows serialization to Content
+MathML and literal terms in infix, prefix and postfix notation. It
+supports subclassable input/output filters, e.g. for Python terms.
 
 If you want to test it, run 'examples/infix.py'.
 
@@ -62,13 +64,15 @@ one, but replaces the DOM implementation with a patched version of
 lxml [3], an XML API similar to ElementTree [4], implemented on top of
 libxml2 [5]. That makes it much faster than the pure Python
 implementation (just try test/test.py for a comparison) and it
-supports more XML features, like XSLT and XInclude. Please apply the
-patch that comes with MathDOM if you want to use lxml. The patch
-applies to release versions of lxml, currently 0.8. It has been
-submitted for incremental inclusion in lxml. You may also consider
-getting the patched SVN version from a branch:
+supports more XML features, like XSLT and XInclude.
 
-svn co http://codespeak.net/svn/lxml/branch/scoder1 contrib/lxml
+To use it, you cannot currently use the official release version of
+lxml. MathDOM relies on lxml enhancements that are only incrementally
+folded back into the mainstream version. The download page of MathDOM
+provides a patched version that you can use instead. You may also
+consider getting the patched SVN version from a branch:
+
+svn co http://codespeak.net/svn/lxml/branch/scoder2 contrib/lxml
 (contrib/lxml is the local target directory)
 
 
@@ -77,49 +81,46 @@ The files:
 
 * Installation:
 
-setup.py               - distutils, try "python setup.py install"
-
-
-* Patching lxml:
-
-lxml.patch             - apply in the lxml source directory (use -p0).
+setup.py                - distutils, try "python setup.py install"
 
 
 * Examples are in "examples/":
 
-examples/infix.py      - example program: read a term, write out MathML,
-                         infix, prefix, postfix representations
-                         -> START HERE if you want to figure out how
-                         everything works.
+examples/infix.py       - example: read a term, write out MathML, infix,
+                          prefix, postfix representations
+                          -> START HERE if you want to figure out how
+                          things work.
 
-examples/dom.py        - example program: read a term, do some DOM stuff
+examples/dom.py         - example: read a term, do some DOM stuff
 
-examples/ldom.py       - example program: read a term, do some lxml/xpath stuff
+examples/ldom.py        - example: read a term, do some lxml/xpath stuff
 
 
 * The actual package source is in "mathml/":
 
-mathml/mathdom.py      - the DOM implemention
+mathml/mathdom.py       - the DOM implemention
 
-mathml/lmathdom.py     - the lxml implemention (supports XSLT, RelaxNG, etc.)
+mathml/lmathdom.py      - the lxml implemention (supports XSLT, RelaxNG, etc.)
 
-mathml/xmlterm.py      - SAX generator for the termparser AST
+mathml/xmlterm.py       - SAX generator for the termparser AST
 
-mathml/termparser.py   - parser for literal infix terms
+mathml/termparser.py    - parser for literal infix terms
 
-mathml/termbuilder.py  - serializer for literal terms,
-                         framework for output converters
+mathml/termbuilder.py   - serializer for literal terms,
+                          framework for output converters
 
 
 * Extensions are in "mathml/utils/":
 
-mathml/utils/pyterm.py - a Python term serializer
+mathml/utils/pyterm.py  - a Python term serializer and parser
+
+mathml/utils/sqlterm.py - a preliminary SQL term serializer
 
 mathml/utils/mathmlc2p.xsl
-mathml/utils/ctop.xsl  - XSLT converters: Content MathML -> Presentation MathML
+mathml/utils/ctop.xsl   - XSLT converters: Content MathML -> Presentation MathML
 
 mathml/utils/sax_pmathml.py
-                       - PyMathML [6] integration through the SAX interface
+                        - PyMathML [6] integration through the SAX interface
 
 
 * PyMathML [6] is in "mathml/pmathml/"
