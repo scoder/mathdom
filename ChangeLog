@@ -3,7 +3,7 @@
 	* README, html/MathDOM.html:
 	adapt docs to reflect switch to lxml package instead of lxml patch
 
-	* setup.py: do noe include lxml patch, no default build of lxml, 0.6.5
+	* setup.py: do not include lxml patch, no default build of lxml, 0.6.5
 
 	* setup.py: include mathml.schema package in packages
 
