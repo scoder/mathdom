@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
+__doc__ = """
 Implementation of an infix term parser.
 
 Generates an AST that can be converted to SAX events using the
@@ -12,8 +12,8 @@ Usage examples:
 
 * arithmetic terms:
 
->>> from termparser import term_parsers
->>> from termbuilder import tree_converters
+>>> from mathml.termparser  import term_parsers
+>>> from mathml.termbuilder import tree_converters
 >>> term = '.1*pi+2*(1+3i)-5.6-6*-1/sin(-45*a.b) + 1'
 >>> parsed_ast = term_parsers['infix_term'].parse(term)
 >>> parsed_ast
@@ -32,6 +32,7 @@ u'0.1 * pi + 2 * (1+3i) - 5.6 - 6 * -1 / sin ( -45 * a.b ) + 1'
 >>> converter = tree_converters['postfix']
 >>> converter.build(parsed_ast)
 u'0.1 pi * 2 (1+3i) * 5.6 6 -1 -45 a.b * sin / * - - 1 + + 1 = 0.1 pi * 2 (1+3i) * 5.6 6 -1 -45 a.b * sin / * - - 1 + + 5 > true and or'
+
 """
 
 __all__ = (

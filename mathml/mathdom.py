@@ -1,5 +1,15 @@
 #!/usr/bin/python
 
+__doc__ = """
+PyXML/4DOM based implementation of MathDOM.
+
+It depends on PyXML and provides a DOM level 2 compatible API.  Use
+this if you want a pure Python DOM API.
+
+The main class is MathDOM.  It supports parsing and serializing MathML
+and several other term representations.
+"""
+
 __all__ = [ 'MathDOM' ]
 
 import sys, new
@@ -361,7 +371,7 @@ class MathDOM(object):
 
     def __augmentElements(self, node):
         "Weave methods into DOM Element objects."
-        if node.nodeType == node.ELEMENT_NODE:
+        if node.nodeType == node.ELEMENT_NODE and node.namespaceURI == MATHML_NAMESPACE_URI:
             element_methods = METHODS_BY_ELEMENT_NAME.get(node.localName, ())
             node_class = node.__class__
             build_instancemethod = new.instancemethod
@@ -389,16 +399,20 @@ class MathDOM(object):
 
     @classmethod
     def fromSax(cls, input, sax_parser):
+        "Build a MathDOM from input using sax_parser."
         dom_builder = Reader(parser=sax_parser)
         return cls( dom_builder.fromString(input) )
 
     @classmethod
     def fromString(cls, input, input_type='mathml'):
+        "Build a MathDOM from input using the string term parser for input_type."
         dom_builder = cls.__build_sax_reader(input_type)
         return cls( dom_builder.fromString(input) )
 
     @classmethod
     def fromStream(cls, input, input_type='mathml'):
+        """Build a MathDOM from the file-like object input using the
+        stringterm parser for input_type."""
         dom_builder = cls.__build_sax_reader(input_type)
         return cls( dom_builder.fromStream(input) )
 
@@ -409,6 +423,7 @@ class MathDOM(object):
         return repr(self._document)
 
     def to_tree(self):
+        "Build and return the AST representation."
         return dom_to_tree(self._document)
 
     def serialize(self, output_format=None, converter=None):
@@ -426,6 +441,11 @@ class MathDOM(object):
 
     if HAS_XPATH:
         def xpath(self, expression, other_namespaces=None):
+            """Evaluate an XPath expression against the MathDOM.  The
+            'math' prefix will automatically be available for the
+            MathML namespace.  If other namespaces are needed, the can
+            be specified as a {prefix : namespaceURI} dictionary.
+            """
             if other_namespaces:
                 other_namespaces = other_namespaces.copy()
                 other_namespaces.update(_MATH_NS_DICT)
@@ -435,6 +455,9 @@ class MathDOM(object):
             return xpath.Evaluate(expression, context=context)
 
     def toMathml(self, out=None, indent=False):
+        """Convert this MathDOM into MathML and write it to file (or
+        file-like object) out.  Pretty printing is activated by
+        setting indent=True."""
         if out is None:
             out = sys.stdout
 
@@ -454,6 +477,9 @@ class MathDOM(object):
     # new DOM methods:
 
     def createApply(self, name, *args):
+        """Create a new apply tag given the name of a function or
+        operator and (optionally) its paremeter elements as further
+        arguments."""
         create_element = self._document.createElementNS
         apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
         function_tag = create_element(MATHML_NAMESPACE_URI, name)
@@ -466,7 +492,16 @@ class MathDOM(object):
     createFunction = createApply
 
     def createConstant(self, value):
+        "Create a new cn tag with the given value."
         create_element = self._document.createElementNS
         cn_tag = create_element(MATHML_NAMESPACE_URI, u'cn')
         cn_tag.set_value(value)
+        return cn_tag
+
+    def createIdentifier(self, name):
+        "Create a new ci tag that represents the given name."
+        create_element = self._document.createElementNS
+        create_text    = self._document.createTextNode
+        cn_tag = create_element(MATHML_NAMESPACE_URI, u'ci')
+        cn_tag.childNodes[:] = [create_text(name)]
         return cn_tag

@@ -1,5 +1,6 @@
-"""
-MathML numeric type classes based on Decimal.
+__doc__ = """
+MathML numeric type implementations based on the Decimal type.
+
 Complex, Rational, ENotation
 """
 
@@ -7,6 +8,10 @@ from decimal import Decimal
 
 
 class Complex(complex):
+    """Data type for complex numbers.
+
+    Examples are (1+5i), (0.1-2i), (-i), ...
+    """
     TYPE_NAME = u'complex'
 
     __ZERO = Decimal(0)
@@ -54,6 +59,10 @@ class Complex(complex):
 
 
 class Rational(Decimal):
+    """Data type for rational numbers.
+
+    Examples are 1/20, 3/45, ...
+    """
     TYPE_NAME = u'rational'
 
     def __new__(cls, num, denom=None):
@@ -93,6 +102,10 @@ class Rational(Decimal):
 
 
 class ENotation(Decimal):
+    """Data type of numbers in E-Notation.
+
+    An example is 1E20 for 1*10^20.
+    """
     TYPE_NAME = u'e-notation'
 
     def __new__(cls, num, exponent=None):

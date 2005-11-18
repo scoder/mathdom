@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
+
+__doc__ = """
 Implementation of a SAX parser for the AST defined in the
 mathml.termparser module.
 
@@ -134,7 +135,7 @@ def serialize_dom(doc_or_element, output_format=None, converter=None):
 
 
 def dom_to_tree(doc_or_element):
-    "Convert DOM document into AST."
+    "Convert a MathDOM document or element into its AST representation."
     map_operator = dict((v,n) for (n,v) in _FUNCTION_MAP.iteritems()).get
     map_constant = dict((v,n) for (n,v) in _ELEMENT_CONSTANT_MAP.iteritems()).get
     def _recursive_piecewise(piecewise):

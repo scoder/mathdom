@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
-Implementation of AST output converters.
+__doc__ = """
+Implementation of the standard AST output converters.
 """
 
 __all__ = (
@@ -18,7 +18,8 @@ except ImportError:
 
 from itertools import *
 
-from mathml.termparser import (InfixTermParser, InfixBoolExpressionParser, ConverterRegistry,
+from mathml.termparser import (InfixTermParser, InfixBoolExpressionParser,
+                               ConverterRegistry,
                                TERM_OPERATOR_ORDER, BOOL_CMP_OPERATORS)
 
 class TermBuilder(object):
@@ -131,7 +132,7 @@ class LiteralTermBuilder(TermBuilder):
 
 
 class InfixTermBuilder(LiteralTermBuilder):
-    "Convert the parse tree into a literal infix term."
+    "TermBuilder that converts the parse tree into a literal infix term."
     MAX_AFFIN = len(TermBuilder.OPERATOR_ORDER)+1
     __operator_order = TermBuilder.OPERATOR_ORDER.index
     def _init_build_status(self):
@@ -182,7 +183,7 @@ class InfixTermBuilder(LiteralTermBuilder):
         return [ self._map_operator(operator), '(', ','.join(operands), ')' ]
 
 class PostfixTermBuilder(LiteralTermBuilder):
-    "Convert the parse tree into a literal postfix term."
+    "TermBuilder that converts the parse tree into a literal postfix term."
     def _handle_case(self, operator, operands, _):
         assert operator == 'case'
         if len(operands) > 2:
@@ -198,7 +199,7 @@ class PostfixTermBuilder(LiteralTermBuilder):
             return chain(operands, repeat(self._map_operator(operator), max(1, len(operands)-1)))
 
 class PrefixTermBuilder(LiteralTermBuilder):
-    "Convert the parse tree into a literal prefix term."
+    "TermBuilder that converts the parse tree into a literal prefix term."
     def _handle_case(self, operator, operands, _):
         assert operator == 'case'
         if len(operands) > 2:
