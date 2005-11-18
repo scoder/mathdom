@@ -1,3 +1,36 @@
+2005-11-18  scoder  <scoder@toaster>
+
+	* setup.py: Note on more consistent APIs, 0.6.6
+
+	* test/test_dom.py, mathml/lmathdom.py, mathml/mathdom.py:
+	new convenience functions for building tags in both mathdom and lmathdom, new test for DOM building
+
+	* mathml/datatypes.py, mathml/mathdom.py, mathml/termbuilder.py, mathml/termparser.py, mathml/xmlterm.py:
+	documentation updates
+
+	* mathml/lmathdom.py: documentation updates and new element builders
+
+2005-11-17  scoder  <scoder@toaster>
+
+	* setup.py: add comment for 0.6.5
+
+	* ChangeLog: clean up
+
+	* ChangeLog: typo
+
+	* ChangeLog: 0.6.5
+
+	* README, html/MathDOM.html:
+	adapt docs to reflect switch to lxml package instead of lxml patch
+
+	* setup.py: do noe include lxml patch, no default build of lxml, 0.6.5
+
+	* setup.py: include mathml.schema package in packages
+
+	* setup.py: include mathml/schema package
+
+	* MANIFEST.in: removed this file to autogenerate it
+
 2005-11-17  scoder  <scoder@toaster>
 
 	* README, html/MathDOM.html:
