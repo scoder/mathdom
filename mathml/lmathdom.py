@@ -528,7 +528,10 @@ class MathDOM(object):
         function_tag = SubElement(apply_tag,
                                   u'{%s}%s' % (MATHML_NAMESPACE_URI, name))
         if args:
-            function_tag[:] = args
+            if len(args) == 1 and isinstance(args[0], (list, tuple)):
+                args = args[0]
+            for child in args:
+                apply_tag.append(child)
         return apply_tag
 
     createFunction = createApply
@@ -539,9 +542,18 @@ class MathDOM(object):
         cn_tag.set_value(value)
         return cn_tag
 
+    def createIdentifier(self, name):
+        "Create a new identifier that represents the given name."
+        ci_tag = Element(u'{%s}ci' % MATHML_NAMESPACE_URI)
+        ci_tag.text = name
+        return ci_tag
+
+
 def Constant(parent, value, type_name=None):
     """Create a new cn tag under the parent element that represents
     the given constant."""
+    if isinstance(parent, MathDOM):
+        parent = parent.getroot()
     cn_tag = SubElement(parent, u'{%s}cn' % MATHML_NAMESPACE_URI)
     cn_tag.set_value(value, type_name)
     return cn_tag
@@ -549,22 +561,29 @@ def Constant(parent, value, type_name=None):
 def Identifier(parent, name):
     """Create a new ci tag under the parent element that represents
     the given name."""
-    cn_tag = SubElement(parent, u'{%s}ci' % MATHML_NAMESPACE_URI)
-    cn_tag.text = name
+    if isinstance(parent, MathDOM):
+        parent = parent.getroot()
+    ci_tag = SubElement(parent, u'{%s}ci' % MATHML_NAMESPACE_URI)
+    ci_tag.text = name
     return ci_tag
 
 Name = Identifier
 
-def Apply(self, parent, name, *args):
+def Apply(parent, name, *args):
     """Create a new apply tag under the parent element, given the name
     of a function or operator and (optionally) its paremeter elements
     as further arguments."""
+    if isinstance(parent, MathDOM):
+        parent = parent.getroot()
     apply_tag    = SubElement(parent,
                               u'{%s}apply' % MATHML_NAMESPACE_URI)
     function_tag = SubElement(apply_tag,
                               u'{%s}%s' % (MATHML_NAMESPACE_URI, name))
     if args:
-        function_tag[:] = args
+        if len(args) == 1 and isinstance(args[0], (list, tuple)):
+            args = args[0]
+        for child in args:
+            apply_tag.append(child)
     return apply_tag
 
 

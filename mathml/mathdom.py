@@ -379,6 +379,7 @@ class MathDOM(object):
                 (method_name, build_instancemethod(method, node, node_class))
                 for method_name, method in chain(self.__common_methods, element_methods)
                 )
+            node.dom = self
 
         text_node = Node.TEXT_NODE
         for child in tuple(node.childNodes):
@@ -485,17 +486,20 @@ class MathDOM(object):
         function_tag = create_element(MATHML_NAMESPACE_URI, name)
         apply_tag.appendChild(function_tag)
         self.__augmentElements(apply_tag)
-        if args:
-            function_tag.childNodes[:] = args
+        if len(args) == 1 and isinstance(args[0], (tuple, list)):
+            args = args[0]
+        for child in args:
+            apply_tag.appendChild(child)
         return apply_tag
 
     createFunction = createApply
 
-    def createConstant(self, value):
+    def createConstant(self, value, type_name=None):
         "Create a new cn tag with the given value."
         create_element = self._document.createElementNS
         cn_tag = create_element(MATHML_NAMESPACE_URI, u'cn')
-        cn_tag.set_value(value)
+        self.__augmentElements(cn_tag)
+        cn_tag.set_value(value, type_name)
         return cn_tag
 
     def createIdentifier(self, name):
@@ -503,5 +507,48 @@ class MathDOM(object):
         create_element = self._document.createElementNS
         create_text    = self._document.createTextNode
         cn_tag = create_element(MATHML_NAMESPACE_URI, u'ci')
-        cn_tag.childNodes[:] = [create_text(name)]
+        self.__augmentElements(cn_tag)
+        cn_tag.appendChild( create_text(name) )
         return cn_tag
+
+
+# ElementTree-like convenience methods
+
+def Constant(parent, value, type_name=None):
+    """Create a new cn tag under the parent element that represents
+    the given constant."""
+    if isinstance(parent, MathDOM):
+        dom = parent
+        parent = parent.firstChild
+    else:
+        dom = parent.dom
+    cn_element = dom.createConstant(value, type_name)
+    parent.appendChild( cn_element )
+    return cn_element
+
+def Identifier(parent, name):
+    """Create a new ci tag under the parent element that represents
+    the given name."""
+    if isinstance(parent, MathDOM):
+        dom = parent
+        parent = parent.firstChild
+    else:
+        dom = parent.dom
+    ci_element = dom.createIdentifier(name)
+    parent.appendChild( ci_element )
+    return ci_element
+
+Name = Identifier
+
+def Apply(parent, name, *args):
+    """Create a new apply tag under the parent element, given the name
+    of a function or operator and (optionally) its paremeter elements
+    as further arguments."""
+    if isinstance(parent, MathDOM):
+        dom = parent
+        parent = parent.firstChild
+    else:
+        dom = parent.dom
+    apply_element = dom.createApply(name, *args)
+    parent.appendChild( apply_element )
+    return apply_element
