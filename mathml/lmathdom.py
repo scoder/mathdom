@@ -30,7 +30,8 @@ from StringIO   import StringIO
 
 from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
                         Namespace, XSLT, XMLSchema, RelaxNG,
-                        XPathElementEvaluator, SaxTreeBuilder)
+                        XPathElementEvaluator)
+from lxml.sax   import ElementTreeContentHandler
 
 from mathml           import MATHML_NAMESPACE_URI, UNARY_FUNCTIONS
 from mathml.xmlterm   import SaxTerm, dom_to_tree, serialize_dom
@@ -417,7 +418,7 @@ class MathDOM(object):
     @classmethod
     def fromSax(cls, input, sax_parser):
         "Build a MathDOM from input using sax_parser."
-        content_handler = SaxTreeBuilder()
+        content_handler = ElementTreeContentHandler()
         sax_parser.setContentHandler(content_handler)
         sax_parser.parse( cls.__build_input_file(input) )
         return cls( content_handler.etree )
