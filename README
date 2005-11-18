@@ -76,6 +76,23 @@ svn co http://codespeak.net/svn/lxml/branch/scoder2 contrib/lxml
 (contrib/lxml is the local target directory)
 
 
+PyXML vs. lxml:
+---------------
+
+MathDOM's mathml package includes two main modules: mathdom and
+lmathdom. The first depends on PyXML and the second on lxml. It is one
+of the goals of MathDOM to keep both APIs as close as possible, but
+since lxml's ElementTree API is very different in spirit from PyXML's
+DOM, there will always be differences. If you want your code to be
+portable between both (e.g. to use the mathdom module as a fallback in
+Jython), please try to avoid the XML specific APIs as much as possible
+and prefer the methods that are defined by the MathDOM
+implementation. If you need a specific feature that both lxml and
+PyXML support, but that is accessed differently in both MathDOM APIs,
+feel free to discuss this on the MathDOM mailing list as a request for
+API enhancement.
+
+
 The files:
 ----------
 
