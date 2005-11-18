@@ -1,9 +1,32 @@
 #!/usr/bin/python
 
-__all__ = [ 'MathDOM' ]
+__all__ = [ 'MathDOM', 'Apply', 'Constant', 'Identifier' ]
+
+__doc__ = """
+ElementTree/lxml based implementation of MathDOM.
+
+This module depends on the C extension lxml, which in turn requires
+libxml2 and libxslt.  Use this if you want a simple API, MathML
+validation and XSLT support.
+
+The main class is MathDOM.  It supports parsing and serializing MathML
+and several other term representations.
+
+Apart from the regular ElementTree/lxml API, the special functions
+Apply, Identifier and Constant create new 'math:apply', 'math:ci' and
+'math:cn' tags under a given parent like this:
+
+>>> from mathml.lmathdom import MathDOM, Apply, Identifier, Constant
+>>> doc = MathDOM.fromString('a+3*(4+5)', 'infix_term')
+>>> for apply_tag in doc.xpath(u'//math:apply[math:plus]'): # add 1 to every sum
+...     c = Constant(apply_tag, 1, 'integer')
+>>> doc.serialize('infix')
+u'a + 3 * ( 4 + 5 + 1 ) + 1'
+
+"""
 
 import sys
-from StringIO  import StringIO
+from StringIO   import StringIO
 
 from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
                         Namespace, XSLT, XMLSchema, RelaxNG,
@@ -71,8 +94,10 @@ MML_SCHEMA = None
 # try to read RelaxNG schema for MathML validation
 MML_RNG = SCHEMAS.get('mathml2')
 
+
 _MATH_NS_DICT = {u'math' : MATHML_NAMESPACE_URI}
 _NAMESPACE    = u"{%s}" % MATHML_NAMESPACE_URI
+
 
 def _tag_name(local_name):
     return u"{%s}%s" % (MATHML_NAMESPACE_URI, local_name)
@@ -218,6 +243,7 @@ class math_math(SerializableMathElement):
 
 class math_cn(SerializableMathElement):
     IMPLEMENTS = u'cn'
+    VALID_TYPES = ("real", "integer", "rational")
     def __repr__(self):
         name = self.localName
         return u"<%s type='%s'>%r</%s>" % (name, self.get(u'type', u'real'), self.value(), name)
@@ -264,12 +290,12 @@ class math_cn(SerializableMathElement):
         except KeyError:
             raise NotImplementedError, "Invalid data type."
 
-    def _set_tuple_value(self, typename, value_tuple):
+    def _set_tuple_value(self, type_name, value_tuple):
         self.clear()
         self.text = unicode(value_tuple[0])
         sep = SubElement(self, _tag_name(u'sep'))
         sep.tail  = unicode(value_tuple[1])
-        self.set(u'type', typename)
+        self.set(u'type', type_name)
 
     def set_value(self, value, type_name=None):
         """Set the value of this element. May have to specify a MathML
@@ -290,7 +316,10 @@ class math_cn(SerializableMathElement):
                     type_name = u'real'
                 else:
                     raise TypeError, "Invalid value type. Please specify type name."
+        elif type_name not in self.VALID_TYPES:
+            raise ValueError, "Unsupported type name."
         self.clear()
+        self.set(u'type', type_name)
         self.text = unicode(value)
 
 
@@ -387,6 +416,7 @@ class MathDOM(object):
 
     @classmethod
     def fromSax(cls, input, sax_parser):
+        "Build a MathDOM from input using sax_parser."
         content_handler = SaxTreeBuilder()
         sax_parser.setContentHandler(content_handler)
         sax_parser.parse( cls.__build_input_file(input) )
@@ -394,10 +424,13 @@ class MathDOM(object):
 
     @classmethod
     def fromString(cls, input, input_type='mathml'):
+        "Build a MathDOM from input using the string term parser for input_type."
         return cls.fromStream(cls.__build_input_file(input), input_type)
 
     @classmethod
     def fromStream(cls, input, input_type='mathml'):
+        """Build a MathDOM from the file-like object input using the
+        stringterm parser for input_type."""
         if input_type == 'mathml':
             return cls( ElementTree(file=input) )
         else:
@@ -405,6 +438,9 @@ class MathDOM(object):
             return cls.fromSax(input, sax_parser())
 
     def toMathml(self, out=None, indent=False):
+        """Convert this MathDOM into MathML and write it to file (or
+        file-like object) out. Note that the indent parameter is
+        currently ignored due to limitations of lxml."""
         if out is None:
             out = sys.stdout
         tree = self._etree
@@ -428,17 +464,21 @@ class MathDOM(object):
 
     if STYLESHEET_TRANSFORMERS:
         def xsltify(self, _output_format, **kwargs):
+            "Run an XSLT on the root node."
             root = self._etree.getroot()
             return root.xsltify(_output_format, **kwargs)
 
     if MML_SCHEMA:
         def validate(self):
+            "Validate the MathDOM against the MathML 2.0 XML Schema."
             return MML_SCHEMA.validate(self._etree)
     elif MML_RNG:
         def validate(self):
+            "Validate the MathDOM against the MathML 2.0 RelaxNG schema."
             return MML_RNG.validate(self._etree)
 
     def to_tree(self):
+        "Build and return the AST representation."
         return dom_to_tree(self._etree)
 
     def serialize(self, output_format=None, converter=None, **kwargs):
@@ -459,6 +499,11 @@ class MathDOM(object):
         return serialize_dom(self._etree, output_format, converter)
 
     def xpath(self, expression, other_namespaces=None):
+        """Evaluate an XPath expression against the MathDOM.  The
+        'math' prefix will automatically be available for the MathML
+        namespace.  If other namespaces are needed, the can be
+        specified as a {prefix : namespaceURI} dictionary.
+        """
         if other_namespaces:
             other_namespaces = other_namespaces.copy()
             other_namespaces.update(_MATH_NS_DICT)
@@ -467,6 +512,7 @@ class MathDOM(object):
         return self._etree.xpath(expression, other_namespaces)
 
     def xslt(self, stylesheet):
+        "Run an XSLT stylesheet against the MathDOM."
         return self._etree.xslt(stylesheet)
 
     def __getattr__(self, name):
@@ -475,8 +521,12 @@ class MathDOM(object):
     # new DOM methods:
 
     def createApply(self, name, *args):
+        """Create a new apply tag given the name of a function or
+        operator and (optionally) its paremeter elements as further
+        arguments."""
         apply_tag = Element(u'{%s}apply' % MATHML_NAMESPACE_URI)
-        function_tag = SubElement(apply_tag, u'{%s}%s' % (MATHML_NAMESPACE_URI, name))
+        function_tag = SubElement(apply_tag,
+                                  u'{%s}%s' % (MATHML_NAMESPACE_URI, name))
         if args:
             function_tag[:] = args
         return apply_tag
@@ -484,23 +534,60 @@ class MathDOM(object):
     createFunction = createApply
 
     def createConstant(self, value):
+        "Create a new constant with the given value."
         cn_tag = Element(u'{%s}cn' % MATHML_NAMESPACE_URI)
         cn_tag.set_value(value)
         return cn_tag
+
+def Constant(parent, value, type_name=None):
+    """Create a new cn tag under the parent element that represents
+    the given constant."""
+    cn_tag = SubElement(parent, u'{%s}cn' % MATHML_NAMESPACE_URI)
+    cn_tag.set_value(value, type_name)
+    return cn_tag
+
+def Identifier(parent, name):
+    """Create a new ci tag under the parent element that represents
+    the given name."""
+    cn_tag = SubElement(parent, u'{%s}ci' % MATHML_NAMESPACE_URI)
+    cn_tag.text = name
+    return ci_tag
+
+Name = Identifier
+
+def Apply(self, parent, name, *args):
+    """Create a new apply tag under the parent element, given the name
+    of a function or operator and (optionally) its paremeter elements
+    as further arguments."""
+    apply_tag    = SubElement(parent,
+                              u'{%s}apply' % MATHML_NAMESPACE_URI)
+    function_tag = SubElement(apply_tag,
+                              u'{%s}%s' % (MATHML_NAMESPACE_URI, name))
+    if args:
+        function_tag[:] = args
+    return apply_tag
+
 
 # serializer function for lxml.XSLT
 
 def xslt_serialize(_, nodes, output_type):
     return ''.join( node.serialize(output_type) for node in nodes )
 
+
 # register namespace implementation
 
 def register_classes(global_class_dict):
-    classes = [ (cls.IMPLEMENTS.split(), cls) for cls in global_class_dict.values()
-                if isinstance(cls, type) and issubclass(cls, MathElement) and hasattr(cls, 'IMPLEMENTS') ]
+    classes = [ (cls.IMPLEMENTS.split(), cls)
+                for cls in global_class_dict.values()
+                if isinstance(cls, type)
+                and issubclass(cls, MathElement)
+                and hasattr(cls, 'IMPLEMENTS') ]
 
-    class_sort = [ (len(item[0]), i, item) for i, item in enumerate(classes) ]
-    class_sort.sort(reverse=True) # move more generic implementations to the front
+    # move more generic implementations to the front
+    # to overwrite them by more special classes
+    class_sort = [ (len(item[0]), i, item)
+                   for i, item in enumerate(classes) ]
+    class_sort.sort(reverse=True)
 
     class_dict = {}
     for item in class_sort:
