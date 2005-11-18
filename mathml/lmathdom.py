@@ -572,7 +572,7 @@ Name = Identifier
 
 def Apply(parent, name, *args):
     """Create a new apply tag under the parent element, given the name
-    of a function or operator and (optionally) its paremeter elements
+    of a function or operator and (optionally) its parameter elements
     as further arguments."""
     if isinstance(parent, MathDOM):
         parent = parent.getroot()

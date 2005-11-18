@@ -479,7 +479,7 @@ class MathDOM(object):
 
     def createApply(self, name, *args):
         """Create a new apply tag given the name of a function or
-        operator and (optionally) its paremeter elements as further
+        operator and (optionally) its parameter elements as further
         arguments."""
         create_element = self._document.createElementNS
         apply_tag = create_element(MATHML_NAMESPACE_URI, u'apply')
