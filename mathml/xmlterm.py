@@ -102,6 +102,7 @@ _FUNCTION_MAP = {
     '-' : u'minus',
     '*' : u'times',
     '/' : u'divide',
+    '%' : u'rem',
     '^' : u'power',
     '|' : u'factorof',
     '=' : u'eq',
