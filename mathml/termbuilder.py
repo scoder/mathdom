@@ -180,7 +180,7 @@ class InfixTermBuilder(LiteralTermBuilder):
                                                         islice(operands, 1, None))))
 
     def _handle(self, operator, operands, affin_status):
-        return [ self._map_operator(operator), '(', ','.join(operands), ')' ]
+        return [ self._map_operator(operator), '(', ', '.join(operands), ')' ]
 
 class PostfixTermBuilder(LiteralTermBuilder):
     "TermBuilder that converts the parse tree into a literal postfix term."
