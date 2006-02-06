@@ -45,15 +45,15 @@ Simple, isn't it ?
 Current status:
 ---------------
 
-This is currently beta software. The API is mostly stabilizing, but
-may still be subject to changes. The output and DOM APIs will likely
-evolve without major compatibility breaks. The subclassable parser is
-relatively new and has not had enough test cases to declare it stable.
+This is currently beta software. The API is mostly stabilizing, but may still
+be subject to changes. The output and DOM APIs will likely evolve without
+major compatibility breaks. The more recent subclassable parser has not had
+any complaints during the last months, so it will most likely follow this
+path.
 
-Please keep in mind that the best way to stabilize an API is to use it
-and give feedback. Every comment or suggestion is appreciated, as are
-patches. If you write your own parsers or serializers, feel free to
-submit them.
+Please keep in mind that the best way to stabilize an API is to use it and
+give feedback. Every comment or suggestion is appreciated, as are patches. If
+you write your own parsers or serializers, feel free to submit them.
 
 
 Regarding lxml:

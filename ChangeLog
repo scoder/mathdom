@@ -1,3 +1,45 @@
+2006-02-06  scoder  <scoder@turi>
+
+	* examples/infix.py: use term converters for java and sql
+
+	* mathml/utils/pyterm.py, mathml/utils/sqlterm.py, mathml/termbuilder.py, mathml/termparser.py:
+	refactoring, explicitly map Python math.* functions
+
+2005-11-29  scoder  <scoder@turi>
+
+	* setup.py: 0.6.7
+
+	* mathml/termbuilder.py:
+	space between function arguments on serialization
+
+2005-11-28  scoder  <scoder@turi>
+
+	* mathml/xmlterm.py: support % operator (modulo)
+
+2005-11-23  scoder  <scoder@turi>
+
+	* html/MathDOM.html: link to PyPI
+
+2005-11-18  scoder  <scoder@turi>
+
+	* mathml/lmathdom.py, mathml/mathdom.py: typo
+
+	* README: note on PyXML vs. lxml
+
+	* mathml/lmathdom.py: update to change in lxml API
+
+	* ChangeLog: 0.6.6
+
+	* setup.py: Note on more consistent APIs, 0.6.6
+
+	* test/test_dom.py, mathml/lmathdom.py, mathml/mathdom.py:
+	new convenience functions for building tags in both mathdom and lmathdom, new test for DOM building
+
+	* mathml/datatypes.py, mathml/mathdom.py, mathml/termbuilder.py, mathml/termparser.py, mathml/xmlterm.py:
+	documentation updates
+
+	* mathml/lmathdom.py: documentation updates and new element builders
+
 2005-11-18  scoder  <scoder@toaster>
 
 	* setup.py: Note on more consistent APIs, 0.6.6
