@@ -55,15 +55,26 @@ def handle_term(term):
         print "%s:" % output_type.upper().ljust(8), converter.build(tree)
         print
 
-    if 'python' not in tree_converters.known_types():
-        print "Importing pyterm converter ..."
-        from mathml.utils import pyterm
+    other_types = {
+        'python'   : 'pyterm',
+        'java'     : 'javaterm',
+        'sql'      : 'sqlterm'
+        }
 
-        print "Building python term ..."
-        print
-        converter = tree_converters['python']
-        print "PYTHON  :" , converter.build(tree)
-        print
+    for serialization_type, module_name in other_types.iteritems():
+        if serialization_type not in tree_converters.known_types():
+            print "Importing %s converter ..." % serialization_type
+            __import__('mathml.utils.' +  module_name)
+
+        if serialization_type in tree_converters.known_types():
+            try:
+                print "Building %s term ..." % serialization_type
+                print
+                converter = tree_converters[serialization_type]
+                print "%-7s : %s" % (serialization_type.upper(), converter.build(tree))
+                print
+            except Exception, e:
+                print e
 
 
 if __name__ == '__main__':
