@@ -18,8 +18,7 @@ except ImportError:
 
 from itertools import *
 
-from mathml.termparser import (InfixTermParser, InfixBoolExpressionParser,
-                               ConverterRegistry,
+from mathml.termparser import (ConverterRegistry,
                                TERM_OPERATOR_ORDER, BOOL_CMP_OPERATORS)
 
 class TermBuilder(object):
@@ -29,8 +28,11 @@ class TermBuilder(object):
                           for op in ops.split() )
     OPERATOR_SET = frozenset(OPERATOR_ORDER)
 
+    _OPERATOR_MAP = {}
+
     def __init__(self):
         self.__dispatcher = self._register_handlers({})
+        self.__map_operator = self._OPERATOR_MAP.get
 
     def _register_handlers(self, dispatcher_dict):
         """Subclasses can modify the dictionary returned by this
@@ -54,7 +56,7 @@ class TermBuilder(object):
 
     def _map_operator(self, operator):
         "To be overwritten by subclasses."
-        return operator
+        return self.__map_operator(operator, operator)
 
     def _build_children(self, operator, children, status):
         if operator == 'name' or operator[:6] == 'const:':
@@ -102,8 +104,11 @@ class LiteralTermBuilder(TermBuilder):
         u'open'        : u'(%s)'
         }
 
-    def _handle_name(self, operator, operands, status):
-        return [ unicode(str(operands[0]), 'ascii') ]
+    _NAME_MAP = {}
+
+    def _handle_name(self, operator, operands, affin):
+        name = unicode(str(operands[0]), 'ascii')
+        return [ self._NAME_MAP.get(name, name) ]
 
     def _handle_const_bool(self, operator, operands, status):
         return [ operands[0] and 'true' or 'false' ]

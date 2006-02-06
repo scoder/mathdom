@@ -98,8 +98,9 @@ class TermTokenizer(object):
             value = Complex(Decimal(t[0]), Decimal(t[1]))
         return [ (u'const:complex', value) ]
 
+    _CONSTANT_MAP = {}
     def _filter_name(self, name):
-        return name
+        return self._CONSTANT_MAP.get(name, name)
 
     # atoms: int, float, string
     p_sign = oneOf('+ -')

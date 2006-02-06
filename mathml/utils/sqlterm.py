@@ -11,11 +11,6 @@ class SqlTermBuilder(InfixTermBuilder):
         u'true'  : u'TRUE',
         u'false' : u'FALSE'
         }
-    map_name = _NAME_MAP.get
-
-    def _handle_name(self, operator, operands, affin):
-        name = unicode(str(operands[0]), 'ascii')
-        return [ self.map_name(name, name) ]
 
     def _handle_const_bool(self, operator, operands, affin):
         return [ operands[0] and 'TRUE' or 'FALSE' ]

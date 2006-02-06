@@ -16,10 +16,28 @@ class PyTermBuilder(InfixTermBuilder):
         }
 
     _OPERATOR_MAP = {
-        '^' : '**',
-        '=' : '==',
+        '^'       : '**',
+        '='       : '==',
+        'acos'    : 'math.acos',
+        'asin'    : 'math.asin',
+        'atan'    : 'math.atan',
+        'atan2'   : 'math.atan2',
+        'ceil'    : 'math.ceil',
+        'cos'     : 'math.cos',
+        'cosh'    : 'math.cosh',
+        'degrees' : 'math.degrees',
+        'exp'     : 'math.exp',
+        'floor'   : 'math.floor',
+        'log'     : 'math.log',
+        'log10'   : 'math.log10',
+        'pow'     : 'math.pow',
+        'radians' : 'math.radians',
+        'sin'     : 'math.sin',
+        'sinh'    : 'math.sinh',
+        'sqrt'    : 'math.sqrt',
+        'tan'     : 'math.tan',
+        'tanh'    : 'math.tanh'
         }
-    map_operator = _OPERATOR_MAP.get
 
     _NAME_MAP = {
         u'e'     : u'math.e',
@@ -27,14 +45,6 @@ class PyTermBuilder(InfixTermBuilder):
         u'true'  : u'True',
         u'false' : u'False'
         }
-    map_name = _NAME_MAP.get
-
-    def _map_operator(self, operator):
-        return self.map_operator(operator, operator)
-
-    def _handle_name(self, operator, operands, affin):
-        name = unicode(str(operands[0]), 'ascii')
-        return [ self.map_name(name, name) ]
 
     def _handle_const_bool(self, operator, operands, affin):
         return [ operands[0] and 'True' or 'False' ]
@@ -72,9 +82,6 @@ class PyTermTokenizer(TermTokenizer):
         u'math.e'  : u'e',
         u'math.pi' : u'pi'
         }
-    map_constant = _CONSTANT_MAP.get
-    def _filter_name(self, name):
-        return self.map_constant(name, name)
 
     @cached
     def p_bool(self):
