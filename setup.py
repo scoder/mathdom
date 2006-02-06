@@ -251,6 +251,11 @@ the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
 
+New in version 0.6.7:
+
+- added missing '%' operator (modulo)
+- adapted to updated lxml API
+
 New in version 0.6.6:
 
 - closer APIs of mathdom and lmathdom
