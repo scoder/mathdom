@@ -29,7 +29,7 @@ import sys
 from StringIO   import StringIO
 
 from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
-                        Namespace, XSLT, XMLSchema, RelaxNG,
+                        FunctionNamespace, Namespace, XSLT, XMLSchema, RelaxNG,
                         XPathElementEvaluator)
 from lxml.sax   import ElementTreeContentHandler
 
@@ -613,11 +613,13 @@ def register_classes(global_class_dict):
     for item in class_sort:
         tags, cls = item[2]
         class_dict.update((tag, cls) for tag in tags)
-
     class_dict[None] = MathElement
+
     lxml_math_namespace = Namespace(MATHML_NAMESPACE_URI)
     lxml_math_namespace.update(class_dict)
-    lxml_math_namespace['serialize'] = xslt_serialize
+
+    function_namespace = FunctionNamespace(MATHML_NAMESPACE_URI)
+    function_namespace['serialize'] = xslt_serialize
 
 register_classes(vars())
 del register_classes

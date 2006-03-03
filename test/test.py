@@ -200,7 +200,7 @@ def build_test_class(term_type, terms, mathdom):
         ''')))
         def test(self):
             doc = etree.ElementTree(mathdom.fromString(term, term_type).getroot())
-            pyterm = stylesheet.tostring( stylesheet.apply(doc) )
+            pyterm = str( stylesheet(doc) )
             self.assertEquals(pyeval( (term_type, term) ).next(), eval(pyterm))
         test.__doc__ = docstr("xslt_ext", term)
         return test
