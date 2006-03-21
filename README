@@ -1,8 +1,8 @@
-MathDOM - accessing terms through a MathML DOM in Python
---------------------------------------------------------
+MathDOM - handling terms through a MathML DOM in Python
+-------------------------------------------------------
 
-I'd be really glad to hear if this is useful. And maybe you have an
-idea how to make it better. :) Just send me an email:
+I'd be really glad to hear if this is useful. And maybe you have an idea how
+to make it better. :) Just send me an email:
 Stefan Behnel <scoder@users.sourceforge.net>
 
 See LICENSE file for licensing.
@@ -16,12 +16,12 @@ What is MathDOM?
 
 Terms, there and back again.
 
-The package comprises parsers for a subset of Content MathML 2.0 and
-infix terms (using pyparsing [1]). It provides access to the term tree
-through a DOM (based on PyXML/4DOM [2]) or, preferably, the
-ElementTree API on top of lxml [3] and allows serialization to Content
-MathML and literal terms in infix, prefix and postfix notation. It
-supports subclassable input/output filters, e.g. for Python terms.
+The package comprises parsers for a subset of Content MathML 2.0 and infix
+terms (using pyparsing [1]). It provides access to the term tree through a DOM
+(based on PyXML/4DOM [2]) or, preferably, the ElementTree API on top of lxml
+[3] and allows serialization to Content MathML and literal terms in infix,
+prefix and postfix notation. It supports subclassable input/output filters,
+e.g. for Python terms.
 
 If you want to test it, run 'examples/infix.py'.
 
@@ -45,52 +45,39 @@ Simple, isn't it ?
 Current status:
 ---------------
 
-This is currently beta software. The API is mostly stabilizing, but may still
-be subject to changes. The output and DOM APIs will likely evolve without
-major compatibility breaks. The more recent subclassable parser has not had
-any complaints during the last months, so it will most likely follow this
-path.
-
-Please keep in mind that the best way to stabilize an API is to use it and
-give feedback. Every comment or suggestion is appreciated, as are patches. If
-you write your own parsers or serializers, feel free to submit them.
+MathDOM 0.7 is now in a stable state. There have not been any bug reports for
+quite a while.  Future enhancements may regard the compatibility of the two
+implementations (PyXML and lxml).  They will likely come closer based on the
+ElementTree API.
 
 
 Regarding lxml:
 ---------------
 
-The lxml based implementation shares most of the code with the PyXML
-one, but replaces the DOM implementation with a patched version of
-lxml [3], an XML API similar to ElementTree [4], implemented on top of
-libxml2 [5]. That makes it much faster than the pure Python
-implementation (just try test/test.py for a comparison) and it
-supports more XML features, like XSLT and XInclude.
+The lxml based implementation shares most of the code with the PyXML one, but
+replaces the DOM implementation with a patched version of lxml [3], an XML API
+similar to ElementTree [4], implemented on top of libxml2 [5]. That makes it
+much faster than the pure Python implementation (just try test/test.py for a
+comparison) and it supports more XML features, like XSLT and XInclude.
 
-To use it, you cannot currently use the official release version of
-lxml. MathDOM relies on lxml enhancements that are only incrementally
-folded back into the mainstream version. The download page of MathDOM
-provides a patched version that you can use instead. You may also
-consider getting the patched SVN version from a branch:
-
-svn co http://codespeak.net/svn/lxml/branch/scoder2 contrib/lxml
-(contrib/lxml is the local target directory)
+MathDOM 0.7 should work out-of-the-box with lxml 0.9 and better.  Get it from
+http://codespeak.net/lxml/
 
 
 PyXML vs. lxml:
 ---------------
 
-MathDOM's mathml package includes two main modules: mathdom and
-lmathdom. The first depends on PyXML and the second on lxml. It is one
-of the goals of MathDOM to keep both APIs as close as possible, but
-since lxml's ElementTree API is very different in spirit from PyXML's
-DOM, there will always be differences. If you want your code to be
-portable between both (e.g. to use the mathdom module as a fallback in
-Jython), please try to avoid the XML specific APIs as much as possible
-and prefer the methods that are defined by the MathDOM
-implementation. If you need a specific feature that both lxml and
-PyXML support, but that is accessed differently in both MathDOM APIs,
-feel free to discuss this on the MathDOM mailing list as a request for
-API enhancement.
+MathDOM's mathml package includes two main modules: mathdom and lmathdom.  The
+first depends on PyXML and the second on lxml.  It is one of the goals of
+MathDOM to keep both APIs as close as possible, but since lxml's ElementTree
+API is very different in spirit from PyXML's DOM, there will always be
+differences.  If you want your code to be portable between both (e.g. to use
+the mathdom module as a fallback in Jython), please try to avoid the XML
+specific APIs as much as possible and prefer the methods that are defined by
+the MathDOM implementation.  Both implementations share a subset of the
+ElementTree API.  If you need a specific feature that both lxml and PyXML
+support, but that is accessed differently in both MathDOM APIs, feel free to
+discuss this on the MathDOM mailing list as a request for API enhancement.
 
 
 The files:
