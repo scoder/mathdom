@@ -1,3 +1,35 @@
+2006-03-21  scoder  <scoder@turi>
+
+	* setup.py: removed support for building lxml
+
+2006-03-08  scoder  <scoder@turi>
+
+	* html/MathDOM.html: link to mailing list
+
+2006-03-06  scoder  <scoder@turi>
+
+	* html/MathDOM.html: news on 0.7
+
+	* mathml/schema/__init__.py:
+	copied RelocatableRelaxNG from lxml, as it will not be in lxml 0.9
+
+2006-03-03  scoder  <scoder@turi>
+
+	* test/test.py, mathml/lmathdom.py: prepare for lxml 0.9
+
+	* html/MathDOM.html: updated links
+
+2006-02-06  scoder  <scoder@turi>
+
+	* setup.py: note on 0.6.7
+
+	* ChangeLog, README: 0.6.7
+
+	* examples/infix.py: use term converters for jyva and sql
+
+	* mathml/utils/pyterm.py, mathml/utils/sqlterm.py, mathml/termbuilder.py, mathml/termparser.py:
+	refactoring, explicitly map Python math.* functions
+
 2006-02-06  scoder  <scoder@turi>
 
 	* examples/infix.py: use term converters for java and sql
@@ -40,18 +72,6 @@
 
 	* mathml/lmathdom.py: documentation updates and new element builders
 
-2005-11-18  scoder  <scoder@toaster>
-
-	* setup.py: Note on more consistent APIs, 0.6.6
-
-	* test/test_dom.py, mathml/lmathdom.py, mathml/mathdom.py:
-	new convenience functions for building tags in both mathdom and lmathdom, new test for DOM building
-
-	* mathml/datatypes.py, mathml/mathdom.py, mathml/termbuilder.py, mathml/termparser.py, mathml/xmlterm.py:
-	documentation updates
-
-	* mathml/lmathdom.py: documentation updates and new element builders
-
 2005-11-17  scoder  <scoder@toaster>
 
 	* setup.py: add comment for 0.6.5
@@ -65,22 +85,11 @@
 	* README, html/MathDOM.html:
 	adapt docs to reflect switch to lxml package instead of lxml patch
 
-	* setup.py: do noe include lxml patch, no default build of lxml, 0.6.5
-
-	* setup.py: include mathml.schema package in packages
+	* setup.py: do not include lxml patch, no default build of lxml, 0.6.5
 
 	* setup.py: include mathml/schema package
 
 	* MANIFEST.in: removed this file to autogenerate it
-
-2005-11-17  scoder  <scoder@toaster>
-
-	* README, html/MathDOM.html:
-	adapt docs to reflect switch to lxml package instead of lxml patch
-
-	* setup.py: do not include lxml patch, no default build of lxml, 0.6.5
-
-	* setup.py: include mathml/schema package
 
 2005-11-16  scoder  <scoder@toaster>
 
@@ -176,43 +185,6 @@
 
 2005-11-03  scoder  <scoder@toaster>
 
-	* setup.py: 0.6.3.1
-
-	* mathml/lmathdom.py: fix lxml import bug
-
-	* ChangeLog: 0.6.3
-
-	* mathml/utils/sax_pmathml.py: one more pychecker fix
-
-	* ChangeLog, setup.py: 0.6.3
-
-	* mathml/lmathdom.py, mathml/mathdom.py, mathml/termparser.py:
-	pychecker fixes
-
-2005-11-03  scoder  <scoder@toaster>
-
-	* mathml/lmathdom.py: fix lxml import bug
-
-	* ChangeLog: 0.6.3
-
-	* mathml/utils/sax_pmathml.py: one more pychecker fix
-
-	* ChangeLog, setup.py: 0.6.3
-
-	* mathml/lmathdom.py, mathml/mathdom.py, mathml/termparser.py:
-	pychecker fixes
-
-2005-11-03  scoder  <scoder@toaster>
-
-	* mathml/utils/sax_pmathml.py: one more pychecker fix
-
-	* ChangeLog, setup.py: 0.6.3
-
-	* mathml/lmathdom.py, mathml/mathdom.py, mathml/termparser.py:
-	pychecker fixes
-
-2005-11-03  scoder  <scoder@toaster>
-
 	* setup.py: 0.6.3
 
 	* mathml/lmathdom.py, mathml/mathdom.py, mathml/termparser.py:
@@ -221,17 +193,6 @@
 2005-11-02  scoder  <scoder@toaster>
 
 	* ChangeLog, setup.py: 0.6.2.1
-
-	* mathml/termparser.py: second try, needed some restructuring
-
-	* mathml/termparser.py, mathml/utils/pyterm.py:
-	let ConverterRegistry accept pyparsing.ParserElement objects and automatically build term parsers from them
-
-	* mathml/utils/pyterm.py: let pyterm export ParseException
-
-2005-11-02  scoder  <scoder@toaster>
-
-	* setup.py: 0.6.2.1
 
 	* mathml/termparser.py: second try, needed some restructuring
 
@@ -251,22 +212,6 @@
 
 	* mathml/termparser.py, mathml/utils/pyterm.py:
 	better Python parser, more extensibility in termparser
-
-	* README: typo
-
-2005-10-31  scoder  <scoder@toaster>
-
-	* setup.py: 0.6.2
-
-	* html/MathDOM.html, mathml/termbuilder.py, mathml/termparser.py, mathml/utils/pyterm.py, test/test.py:
-	updated Python term parser and parser framework
-
-	* README: restructuring
-
-	* mathml/termparser.py, mathml/utils/pyterm.py:
-	better Python parser, more extensibility in termparser
-
-	* README: typo
 
 2005-10-30  scoder  <scoder@toaster>
 
@@ -296,15 +241,6 @@
 	more generic integration of XSLT scripts, replaced c2p XSLT by two new scripts
 
 	* lxml.patch: new lxml patch
-
-2005-10-27  scoder  <scoder@toaster>
-
-	* README: more on mathml/utils, PyMathML integration
-
-	* lxml.patch: new lxml patch
-
-	* mathml/lmathdom.py, mathml/utils/ctop.xsl, mathml/utils/mathmlc2p.xsl, mathml/utils/mmlctop.xsl, mathml/utils/sax_pmathml.py, mathml/xmlterm.py, setup.py, test/test.py:
-	more generic integration of XSLT scripts, replaced c2p XSLT by two new scripts
 
 2005-10-23  scoder  <scoder@toaster>
 
@@ -342,9 +278,6 @@
 	* mathml/schema/mathml2-qname-1.mod.rng, mathml/schema/mathml2.rng, mathml/schema/mathml2.rng.gz:
 	Gzipped RelaxNG schemas for MathML
 
-	* mathml/schema/mathml2-qname-1.mod.rng, mathml/schema/mathml2.rng:
-	RelaxNG schemas for MathML
-
 	* test/test.py: test XSLT, serialize
 
 	* ChangeLog: updated 0.5.4
@@ -357,106 +290,6 @@
 	* html/MathDOM.html: typo
 
 	* ChangeLog: 0.5.4
-
-	* README: more on lxml
-
-	* MANIFEST.in, README, lxml+custom_classes+saxify.patch, lxml.patch:
-	new lxml patch (renamed to lxml.patch)
-
-	* mathml/lmathdom.py, setup.py: adapt to new lxml patches
-
-2005-10-21  scoder  <scoder@toaster>
-
-	* setup.py: 0.6.1
-
-	* lxml.patch: new lxml patch
-
-	* lxml.patch: updated patch
-
-	* ChangeLog: 0.6.0
-
-	* html/MathDOM.html: mention v0.6 features
-
-	* MANIFEST.in, setup.py:
-	0.6.0: RelaxNG validation + XSLT-based Presentation MathML export
-
-	* test/test.py, mathml/__init__.py, mathml/lmathdom.py, mathml/mathdom.py, mathml/xmlterm.py:
-	add and test RNG validation, always output 'math' root tag, make MathDOM.serialize() support mathml and pmathml output
-
-	* mathml/utils/mmlctop.xsl: MathML c2p converter script
-
-	* mathml/schema/mathml2-qname-1.mod.rng, mathml/schema/mathml2.rng, mathml/schema/mathml2.rng.gz:
-	Gzipped RelaxNG schemas for MathML
-
-	* mathml/schema/mathml2-qname-1.mod.rng, mathml/schema/mathml2.rng:
-	RelaxNG schemas for MathML
-
-	* test/test.py: test XSLT, serialize
-
-	* ChangeLog: updated 0.5.4
-
-	* test/test.py: better tests
-
-	* mathml/__init__.py, mathml/lmathdom.py, mathml/mathdom.py:
-	move MathML constant definitions into top-level module
-
-	* html/MathDOM.html: typo
-
-	* ChangeLog: 0.5.4
-
-	* README: more on lxml
-
-	* MANIFEST.in, README, lxml+custom_classes+saxify.patch, lxml.patch:
-	new lxml patch (renamed to lxml.patch)
-
-	* mathml/lmathdom.py, setup.py: adapt to new lxml patches
-
-2005-10-21  scoder  <scoder@toaster>
-
-	* html/MathDOM.html: mention v0.6 features
-
-	* MANIFEST.in, setup.py:
-	0.6.0: RelaxNG validation + XSLT-based Presentation MathML export
-
-	* test/test.py, mathml/__init__.py, mathml/lmathdom.py, mathml/mathdom.py, mathml/xmlterm.py:
-	add and test RNG validation, always output 'math' root tag, make MathDOM.serialize() support mathml and pmathml output
-
-	* mathml/utils/mmlctop.xsl: MathML c2p converter script
-
-	* mathml/schema/mathml2-qname-1.mod.rng, mathml/schema/mathml2.rng, mathml/schema/mathml2.rng.gz:
-	Gzipped RelaxNG schemas for MathML
-
-	* mathml/schema/mathml2-qname-1.mod.rng, mathml/schema/mathml2.rng:
-	RelaxNG schemas for MathML
-
-	* test/test.py: test XSLT, serialize
-
-	* ChangeLog: updated 0.5.4
-
-	* test/test.py: better tests
-
-	* mathml/__init__.py, mathml/lmathdom.py, mathml/mathdom.py:
-	move MathML constant definitions into top-level module
-
-	* html/MathDOM.html: typo
-
-	* ChangeLog: 0.5.4
-
-	* README: more on lxml
-
-	* MANIFEST.in, README, lxml+custom_classes+saxify.patch, lxml.patch:
-	new lxml patch (renamed to lxml.patch)
-
-	* mathml/lmathdom.py, setup.py: adapt to new lxml patches
-
-2005-10-21  scoder  <scoder@toaster>
-
-	* __init__.py, lmathdom.py, mathdom.py:
-	move MathML constant definitions into top-level module
-
-	* lmathdom.py: adapt to new lxml patches
-
-2005-10-21  scoder  <scoder@toaster>
 
 	* README: more on lxml
 
@@ -516,43 +349,6 @@
 
 	* MANIFEST.in: add lxml patch
 
-2005-10-17  scoder  <scoder@toaster>
-
-	* README, html/MathDOM.html, html/codestyle.css, html/copy.sh:
-	documentation updates
-
-	* mathml/utils/pyterm.py: fix complex output
-
-	* setup.py: start work on 0.5.3
-
-	* examples/ldom.py: make XPath expression more selective
-
-	* README: add example in README
-
-	* setup.py: adapt description to 0.5.2
-
-	* test/test.py: test python DOM serializer
-
-	* mathml/lmathdom.py, mathml/mathdom.py, mathml/xmlterm.py, test/test.py, README, examples/dom.py, examples/ldom.py, lxml+custom_classes+saxify.patch, setup.py:
-	0.5.2
-	added implementation based on lxml + patch for lxml
-	adapted other parts to more generic API
-
-	* MANIFEST.in: add lxml patch
-
-2005-10-17  scoder  <scoder@toaster>
-
-	* pyterm.py: fix complex output
-
-2005-10-17  scoder  <scoder@toaster>
-
-	* mathml/lmathdom.py, mathml/mathdom.py, mathml/xmlterm.py, test/test.py, README, examples/dom.py, examples/ldom.py, lxml+custom_classes+saxify.patch, setup.py:
-	0.5.2
-	added implementation based on lxml + patch for lxml
-	adapted other parts to more generic API
-
-	* MANIFEST.in: add lxml patch
-
 2005-10-10  scoder  <scoder@toaster>
 
 	* README: alpha->beta
@@ -571,27 +367,11 @@
 	* examples/dom.py, examples/infix.py, mathml/mathdom.py, mathml/termparser.py, mathml/xmlterm.py:
 	partial serialization
 
-2005-10-09  scoder  <scoder@toaster>
-
-	* dom.py, infix.py: partial serialization
-
 2005-10-07  scoder  <scoder@toaster>
 
 	* infix.py: use psyco if available
 
 	* dom.py: quick fix for dom example
-
-	* dom.py, infix.py:
-
-	towards 0.5.0
-	run pychecker
-	rename src directory to mathml
-	major restructuring of input API:
-	* MathDOM.fromString/fromStream/fromSax
-	* term_parsers, tree_converters: conversion registries for input and output to/from ASTs
-	* make SaxTerm the central API class for SAX event generation
-
-2005-10-07  scoder  <scoder@users.sourceforge.net>
 
 	* MANIFEST.in, mathml/__init__.py, mathml/datatypes.py, mathml/mathdom.py, mathml/termbuilder.py, mathml/termparser.py, mathml/utils/pyterm.py, mathml/xmlterm.py, test/test.py, examples/dom.py, examples/infix.py, setup.py:
 
