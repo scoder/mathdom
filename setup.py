@@ -131,6 +131,7 @@ if HAS_LMATHDOM:
     manifest.write("""
     include examples/ldom.py mathml/schema/mathml2.rng.gz mathml/utils/mathmlc2p.xsl mathml/utils/ctop.xsl
     include mathml/pmathml/*.py mathml/pmathml/backend/*.py
+    recursive-exclude mathml/pmathml .cvsignore
     """.replace('    ', ''))
 else:
     manifest.write("""
