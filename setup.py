@@ -115,8 +115,6 @@ if HAS_LMATHDOM:
         'mathml.utils' : ['mathmlc2p.xsl', 'ctop.xsl']
         })
     PACKAGES.append('mathml.pmathml')
-    PACKAGES.append('mathml.pmathml.xml')
-    PACKAGES.append('mathml.pmathml.backend')
 
 # BUILD MANIFEST.in
 
