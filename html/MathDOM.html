@@ -36,8 +36,7 @@ package page</a></li>
 
   <li>Current version: <!--CURRENT-->0.3.0<!--/CURRENT-->
     <a href="http://prdownloads.sourceforge.net/mathdom/mathdom-0.5.3.tar.gz?download">download
-MathDOM</a>, <a href="http://sourceforge.net/project/showfiles.php?group_id=149323&amp;package_id=169694">download
-enhanced lxml</a><br />
+MathDOM</a><br />
 
   </li>
 
@@ -54,19 +53,11 @@ The DOM elements are enhanced by domain specific methods that make
 using the DOM a little easier. Input parsers and output converters are
 easily extensible.<br />
 
-The 0.6 versions simplify the portability of code between the PyXML and
-lxml versions. They also extend the latter with an XSLT-based output
-filter
-for <a href="http://www.w3.org/TR/MathML2/chapter3.html">Presentational
+Newer versions simplify the portability of code between the PyXML and lxml
+versions. They also extend the latter with an XSLT-based output filter for
+<a href="http://www.w3.org/TR/MathML2/chapter3.html">Presentational
 MathML</a> and <a href="http://relaxng.org/tutorial.html">RelaxNG</a>-based
 document validation. The PyXML cannot support any of these.</p>
-
-<p><span style="font-weight: bold;">Version 0.7</span>
-will be
-available at the end of March, together with a new official release of
-lxml (0.9). MathDOM will then no longer require patched versions of
-lxml. If you have any requests on further enhancements in MathDOM 0.7,
-please report them to the mailing list!<br />
 
 </p>
 
@@ -190,23 +181,19 @@ XML specifications.<br />
 
 <span style="font-weight: bold;">Entering</span> <a href="http://codespeak.net/lxml/" style="font-weight: bold;">lxml</a><span style="font-weight: bold;">.</span> Based on <a href="http://xmlsoft.org/">libxml2</a>, lxml supports
 basically all major XML technologies (like XPath, XSLT, XInclude, etc.)
-and combines
-them with the <a href="http://effbot.org/zone/element-index.htm">ElementTree</a>-API.
-I
-am helping to develop an <a href="http://sourceforge.net/project/showfiles.php?group_id=149323&amp;package_id=167214">enhanced
-version of lxml</a>
-that makes
-it more convenient for implementing namespaces - like MathML.
-This version is part of the MathDOM distribution and I'm actively
-working on merging the changes back into the official releases.<br />
+and combines them with the Pythonic
+<a href="http://effbot.org/zone/element-index.htm">ElementTree</a>-API.
+Through XSLT and RelaxNG, it can support Presentational MathML export and
+Content MathML validation.
+<br />
 
 <span style="font-weight: bold;">So, why both?</span>
-The lxml
-implementation is newer and takes the lead in the
-further evolution of MathDOM. Still, the PyXML implementation is
-written in pure Python and can therefore be used where lxml/libxml2
-is not available. The MathDOM package is easily split up into
-independent packages depending on lxml or PyXML only.
+The lxml implementation is newer and takes the lead in the further
+evolution of MathDOM. Still, the PyXML implementation is written
+in pure Python and can therefore be used where lxml/libxml2 is not
+available. The MathDOM package is easily split up into independent
+packages depending on lxml or PyXML only.
+
 <h2>MathML</h2>
 
 <p><a href="http://www.w3.org/TR/MathML2/">MathML</a>
@@ -217,16 +204,10 @@ a part of that specification that focuses on the semantics rather
 than the representation of mathematical expressions. MathML has
 received a lot of support in mathematical software as well as web
 browsers and represents a comfortable layer for the semantic
-exchange of mathematics - see <a href="http://www.w3.org/Math/Software/">http://www.w3.org/Math/Software/</a></p>
-
-<h2>And now, Python has it, too! :)</h2>
-
-<p>I'd like to invite everyone who is interested to play with it
-and to comment on the evolving state. Note that
-Content MathML support is not complete, as the primary focus is on
-term representation. It does, however, handle pretty complex things
-and I'd be glad to see currently unsupported terms and MathML
-documents that are worth being supported in the future.</p>
+exchange of mathematics - see
+<a href="http://www.w3.org/Math/Software/">http://www.w3.org/Math/Software/</a>.
+Note that Content MathML support in MathDOM is not complete, as the primary
+focus is on term representation.</p>
 
 <p align="right">&copy; Stefan Behnel, 2005<br />
 
