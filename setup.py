@@ -235,7 +235,7 @@ New in version 0.6:
     author='Stefan Behnel',
     author_email='scoder@users.sourceforge.net',
     url='http://mathdom.sourceforge.net/',
-    download_url='http://www.sourceforge.net/projects/mathdom',
+    download_url='http://prdownloads.sourceforge.net/mathdom/mathdom-%s.tar.gz?download' % VERSION,
 
     classifiers = [
     'Development Status :: 4 - Beta',
