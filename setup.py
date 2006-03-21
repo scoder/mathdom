@@ -6,7 +6,7 @@ except ImportError:
     from distutils.extension import Extension
 import sys, os
 
-VERSION  = '0.6.7'
+VERSION  = '0.7'
 PACKAGE_NAME = 'mathdom'
 PACKAGES = ['mathml', 'mathml.utils', 'mathml.schema']
 PACKAGE_DATA = {}
@@ -16,8 +16,6 @@ EXTENSIONS   = []
 # CONFIG DEFAULTS
 
 FORCED_PACKAGE_NAME=None
-LOCAL_LXML=False
-NO_LOCAL_LXML=False
 REQUIRE_PACKAGES_FOR_BUILD=False
 
 # CONFIGURE PACKAGE
@@ -30,7 +28,6 @@ try:
     HAS_LMATHDOM = True
 except OSError:
     HAS_LMATHDOM  = False
-    NO_LOCAL_LXML = True
 
 try:
     os.stat(os.path.join(src_dir, 'mathdom.py'))
@@ -51,11 +48,6 @@ distutils_options = []
 for option in options:
     if option.startswith('--name='):
         FORCED_PACKAGE_NAME=option[7:]
-    elif option == '--local-lxml':
-        LOCAL_LXML = True
-    elif option == '--no-local-lxml':
-        LOCAL_LXML = False
-        NO_LOCAL_LXML = True
     elif option == '--require-imports':
         REQUIRE_PACKAGES_FOR_BUILD = True
     elif option == '--no-require-imports':
@@ -69,27 +61,19 @@ for option in options:
 
 sys.argv[1:] = distutils_options
 
-## # hack to make multi step building work (like in 'bdist_rpm' target)
-## if distutils_options == options:
-##     if 'build' in distutils_options or 'install' in distutils_options:
-##         if HAS_LMATHDOM and HAS_LXML_C and not NO_LOCAL_LXML:
-##             LOCAL_LXML = True
-
 # HELP MESSAGE
 
 if '--help' in options or '--help-mathdom' in options:
     print """MathDOM package install options:
     --help-mathdom       : show this usage information and exit
     --name=XXX           : force package name to XXX
-    --local-lxml         : include bundled lxml package in build    (%s)
-    --no-local-lxml      : prevent bundled lxml from being built    (%s)
     --require-imports    : build depending on installed PyXML/lxml  (%s)
     --no-require-imports : do not check installation
     --pyxml              : build *only* 'mathdom-pyxml' package
     --lxml               : build *only* 'mathdom-lxml'  package
 
     Current build config : lxml (%s), pyxml (%s), forced name (%s)
-    """ % (LOCAL_LXML, NO_LOCAL_LXML, REQUIRE_PACKAGES_FOR_BUILD,
+    """ % (REQUIRE_PACKAGES_FOR_BUILD,
            HAS_LMATHDOM, HAS_MATHDOM, FORCED_PACKAGE_NAME)
     try:
         sys.argv.remove('--help-mathdom')
@@ -100,7 +84,7 @@ if '--help' in options or '--help-mathdom' in options:
 # CHECK FOR AVAILABLE PACKAGES
 
 if REQUIRE_PACKAGES_FOR_BUILD:
-    if HAS_LMATHDOM and not LOCAL_LXML:
+    if HAS_LMATHDOM:
         try:
             from lxml.etree import SaxTreeBuilder
         except:
@@ -113,13 +97,6 @@ if REQUIRE_PACKAGES_FOR_BUILD:
         except:
             print "PyXML not installed."
             HAS_MATHDOM = False
-
-if LOCAL_LXML:
-    if not HAS_LXML_C:
-        raise RuntimeError, "lxml source not installed in contrib directory."
-    if not HAS_LMATHDOM:
-        LOCAL_LXML = False
-        print "lmathdom.py not found, ignoring bundled lxml."
 
 # CHECK WHICH PACKAGE TO BUILD
 
@@ -138,47 +115,16 @@ if HAS_LMATHDOM:
         'mathml.utils' : ['mathmlc2p.xsl', 'ctop.xsl']
         })
     PACKAGES.append('mathml.pmathml')
-
-if LOCAL_LXML:
-    PACKAGES.append('lxml')
-    PACKAGE_DIRS['lxml'] = 'contrib/lxml/src/lxml'
-
-# BUILD LXML EXTENSION
-
-if LOCAL_LXML:
-    def guess_dirs(xsltconfig_flags, flag):
-        wf, rf, ef = os.popen3('xslt-config %s' % xsltconfig_flags)
-        flags = rf.read()
-        error = ef.read()
-        if error:
-            # cannot find it, just refuse to guess
-            raise RuntimeError, "Cannot guess libxml2 dirs. Try configuring it manually."
-        # get all returned flags and return them
-        parts = flags.split()
-        result = []
-        for part in parts:
-            if part.startswith(flag):
-                result.append(part[2:])
-        return result
-
-    include_dirs = guess_dirs('--cflags', '-I')
-    library_dirs = guess_dirs('--libs', '-L')
-
-    EXTENSIONS.append(
-        Extension('lxml.etree',
-                  sources=['contrib/lxml/src/lxml/etree.c'],
-                  include_dirs=include_dirs,
-                  library_dirs=library_dirs,
-                  runtime_library_dirs=library_dirs,
-                  libraries=['xml2', 'xslt'],
-                  extra_compile_args=['-w'])
-        )
+    PACKAGES.append('mathml.pmathml.xml')
+    PACKAGES.append('mathml.pmathml.backend')
 
 # BUILD MANIFEST.in
 
 manifest = open(os.path.join(root_dir, 'MANIFEST.in'), 'w')
 manifest.write("""
 include setup.py MANIFEST.in README LICENSE ChangeLog
+exclude html/*
+include html/*.png html/*.css html/MathDOM.html
 recursive-include test *.py
 include mathml/*.py mathml/utils/*.py mathml/schema/*.py
 include examples/infix.py
@@ -201,16 +147,6 @@ else:
     manifest.write("""
     exclude mathml/mathdom.py
     """.replace('    ', ''))
-if not NO_LOCAL_LXML:
-    if LOCAL_LXML:
-        manifest.write("""
-        recursive-include contrib/lxml *.txt *.mgp
-        include contrib/lxml/src/lxml/*.py contrib/lxml/src/lxml/*.c
-        """.replace('    ', ''))
-    else:
-        manifest.write("""
-        recursive-include contrib/lxml MANIFEST.in *.txt *.c *.py *.pxd *.pyx *.xml *.mgp
-        """.replace('    ', ''))
 manifest.close()
 
 # RUN SETUP
@@ -250,6 +186,10 @@ you need a different representation, add a converter, but don't change
 the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
+
+New in version 0.7:
+
+- works with lxml 0.9 out-of-the-box
 
 New in version 0.6.7:
 
