@@ -1,25 +1,29 @@
-2006-03-21  scoder  <scoder@turi>
+2006-03-21  scoder  <scoder@users.sourceforge.net>
+
+	* setup.py: removed unused packages
+
+	* ChangeLog: MathDOM 0.7
 
 	* setup.py: removed support for building lxml
 
-2006-03-08  scoder  <scoder@turi>
+2006-03-08  scoder  <scoder@users.sourceforge.net>
 
 	* html/MathDOM.html: link to mailing list
 
-2006-03-06  scoder  <scoder@turi>
+2006-03-06  scoder  <scoder@users.sourceforge.net>
 
 	* html/MathDOM.html: news on 0.7
 
 	* mathml/schema/__init__.py:
 	copied RelocatableRelaxNG from lxml, as it will not be in lxml 0.9
 
-2006-03-03  scoder  <scoder@turi>
+2006-03-03  scoder  <scoder@users.sourceforge.net>
 
 	* test/test.py, mathml/lmathdom.py: prepare for lxml 0.9
 
 	* html/MathDOM.html: updated links
 
-2006-02-06  scoder  <scoder@turi>
+2006-02-06  scoder  <scoder@users.sourceforge.net>
 
 	* setup.py: note on 0.6.7
 
@@ -30,29 +34,29 @@
 	* mathml/utils/pyterm.py, mathml/utils/sqlterm.py, mathml/termbuilder.py, mathml/termparser.py:
 	refactoring, explicitly map Python math.* functions
 
-2006-02-06  scoder  <scoder@turi>
+2006-02-06  scoder  <scoder@users.sourceforge.net>
 
 	* examples/infix.py: use term converters for java and sql
 
 	* mathml/utils/pyterm.py, mathml/utils/sqlterm.py, mathml/termbuilder.py, mathml/termparser.py:
 	refactoring, explicitly map Python math.* functions
 
-2005-11-29  scoder  <scoder@turi>
+2005-11-29  scoder  <scoder@users.sourceforge.net>
 
 	* setup.py: 0.6.7
 
 	* mathml/termbuilder.py:
 	space between function arguments on serialization
 
-2005-11-28  scoder  <scoder@turi>
+2005-11-28  scoder  <scoder@users.sourceforge.net>
 
 	* mathml/xmlterm.py: support % operator (modulo)
 
-2005-11-23  scoder  <scoder@turi>
+2005-11-23  scoder  <scoder@users.sourceforge.net>
 
 	* html/MathDOM.html: link to PyPI
 
-2005-11-18  scoder  <scoder@turi>
+2005-11-18  scoder  <scoder@users.sourceforge.net>
 
 	* mathml/lmathdom.py, mathml/mathdom.py: typo
 
@@ -72,7 +76,7 @@
 
 	* mathml/lmathdom.py: documentation updates and new element builders
 
-2005-11-17  scoder  <scoder@toaster>
+2005-11-17  scoder  <scoder@users.sourceforge.net>
 
 	* setup.py: add comment for 0.6.5
 
@@ -91,17 +95,17 @@
 
 	* MANIFEST.in: removed this file to autogenerate it
 
-2005-11-16  scoder  <scoder@toaster>
+2005-11-16  scoder  <scoder@users.sourceforge.net>
 
 	* ChangeLog, setup.py: update for future 0.6.4+
 
 	* mathml/utils/pyterm.py: fix: Python uses '==' for comparison
 
-2005-11-14  scoder  <scoder@toaster>
+2005-11-14  scoder  <scoder@users.sourceforge.net>
 
 	* mathml/lmathdom.py: clean up unused xml schema related stuff
 
-2005-11-13  scoder  <scoder@toaster>
+2005-11-13  scoder  <scoder@users.sourceforge.net>
 
 	* mathml/schema/__init__.py: RelocatableRelaxNG is now defined in lxml
 
@@ -113,14 +117,14 @@
 	* mathml/lmathdom.py, test/test.py:
 	migrated to new lxml developer version to support 'serialize' extension function in XSLT
 
-2005-11-11  scoder  <scoder@toaster>
+2005-11-11  scoder  <scoder@users.sourceforge.net>
 
 	* mathml/termbuilder.py: clean up
 
 	* mathml/lmathdom.py, mathml/utils/__init__.py:
 	use STYLESHEETS import to access xslt directory
 
-2005-11-10  scoder  <scoder@toaster>
+2005-11-10  scoder  <scoder@users.sourceforge.net>
 
 	* setup.py: docs
 
@@ -129,13 +133,13 @@
 	* setup.py:
 	use setuptools if available, build lxml into lxml package (not mathml.lxml)
 
-2005-11-07  scoder  <scoder@toaster>
+2005-11-07  scoder  <scoder@users.sourceforge.net>
 
 	* lxml.patch: removed lxml.patch from CVS
 
 	* setup.py: support building lxml locally into mathml.lxml
 
-2005-11-05  scoder  <scoder@toaster>
+2005-11-05  scoder  <scoder@users.sourceforge.net>
 
 	* setup.py: include lxml*.patch instead of lxml.patch
 
@@ -143,7 +147,7 @@
 
 	* mathml/lmathdom.py: tiny clean up
 
-2005-11-04  scoder  <scoder@toaster>
+2005-11-04  scoder  <scoder@users.sourceforge.net>
 
 	* html/copy.sh: do some formatting on spaces in web page before upload
 
@@ -164,7 +168,7 @@
 	* MANIFEST.in, setup.py:
 	make setup.py configurable, allow package split for lxml *or* PyXML
 
-2005-11-03  scoder  <scoder@toaster>
+2005-11-03  scoder  <scoder@users.sourceforge.net>
 
 	* setup.py: mention bug fixes in 0.6.3.x
 
@@ -183,14 +187,14 @@
 	* mathml/lmathdom.py, mathml/mathdom.py, mathml/termparser.py:
 	pychecker fixes
 
-2005-11-03  scoder  <scoder@toaster>
+2005-11-03  scoder  <scoder@users.sourceforge.net>
 
 	* setup.py: 0.6.3
 
 	* mathml/lmathdom.py, mathml/mathdom.py, mathml/termparser.py:
 	pychecker fixes
 
-2005-11-02  scoder  <scoder@toaster>
+2005-11-02  scoder  <scoder@users.sourceforge.net>
 
 	* ChangeLog, setup.py: 0.6.2.1
 
@@ -201,7 +205,7 @@
 
 	* mathml/utils/pyterm.py: let pyterm export ParseException
 
-2005-10-31  scoder  <scoder@toaster>
+2005-10-31  scoder  <scoder@users.sourceforge.net>
 
 	* ChangeLog, setup.py: 0.6.2
 
@@ -213,7 +217,7 @@
 	* mathml/termparser.py, mathml/utils/pyterm.py:
 	better Python parser, more extensibility in termparser
 
-2005-10-30  scoder  <scoder@toaster>
+2005-10-30  scoder  <scoder@users.sourceforge.net>
 
 	* mathml/utils/pyterm.py:
 	use new parser framework to implement Python term parser
@@ -221,7 +225,7 @@
 	* mathml/termparser.py:
 	parser rewrite to make it subclassable and extensible
 
-2005-10-27  scoder  <scoder@toaster>
+2005-10-27  scoder  <scoder@users.sourceforge.net>
 
 	* lxml.patch: last patch was messed up
 
@@ -242,7 +246,7 @@
 
 	* lxml.patch: new lxml patch
 
-2005-10-23  scoder  <scoder@toaster>
+2005-10-23  scoder  <scoder@users.sourceforge.net>
 
 	* html/MathDOM.html, html/codestyle.css: use table in code layout
 
@@ -253,7 +257,7 @@
 
 	* html/copy.sh: add logos in script
 
-2005-10-21  scoder  <scoder@toaster>
+2005-10-21  scoder  <scoder@users.sourceforge.net>
 
 	* html/MathDOM.html: set download link for lxml patch
 
@@ -298,17 +302,17 @@
 
 	* mathml/lmathdom.py, setup.py: adapt to new lxml patches
 
-2005-10-19  scoder  <scoder@toaster>
+2005-10-19  scoder  <scoder@users.sourceforge.net>
 
 	* README: reorder example
 
 	* html/MathDOM.html, html/copy.sh: spell check, link to lxml patch
 
-2005-10-18  scoder  <scoder@toaster>
+2005-10-18  scoder  <scoder@users.sourceforge.net>
 
 	* html/MathDOM.html, html/copy.sh: link download file directly
 
-2005-10-17  scoder  <scoder@toaster>
+2005-10-17  scoder  <scoder@users.sourceforge.net>
 
 	* README: doc
 
@@ -349,11 +353,11 @@
 
 	* MANIFEST.in: add lxml patch
 
-2005-10-10  scoder  <scoder@toaster>
+2005-10-10  scoder  <scoder@users.sourceforge.net>
 
 	* README: alpha->beta
 
-2005-10-09  scoder  <scoder@toaster>
+2005-10-09  scoder  <scoder@users.sourceforge.net>
 
 	* examples/dom.py: fix imports
 
@@ -367,7 +371,7 @@
 	* examples/dom.py, examples/infix.py, mathml/mathdom.py, mathml/termparser.py, mathml/xmlterm.py:
 	partial serialization
 
-2005-10-07  scoder  <scoder@toaster>
+2005-10-07  scoder  <scoder@users.sourceforge.net>
 
 	* infix.py: use psyco if available
 
