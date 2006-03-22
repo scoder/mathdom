@@ -179,7 +179,7 @@ lxml/libxml2 are available.
 You can call it the shortest way between different term
 representations and a Content MathML DOM. Ever noticed the annoying
 differences between terms in different programming languages? Build
-your application around the DOM and stop caring about the term
+your application around MathDOM and stop caring about the term
 representation that users prefer or that your machine can execute. If
 you need a different representation, add a converter, but don't change
 the model of your application. Literal terms are connected through an
