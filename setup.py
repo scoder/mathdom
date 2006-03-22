@@ -238,13 +238,14 @@ New in version 0.6:
     download_url='http://prdownloads.sourceforge.net/mathdom/mathdom-%s.tar.gz?download' % VERSION,
 
     classifiers = [
-    'Development Status :: 4 - Beta',
+    'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Developers',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python',
     'Topic :: Text Processing :: Markup :: XML',
     'Topic :: Scientific/Engineering :: Mathematics',
+    'Topic :: Software Development :: Libraries :: Python Modules'
     ],
 
     keywords = "MathML xml DOM math parser validator"
