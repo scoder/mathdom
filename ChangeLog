@@ -1,4 +1,24 @@
-2006-03-21  scoder  <scoder@users.sourceforge.net>
+2006-05-07  scoder  <scoder@turi>
+
+	* mathml/lmathdom.py: fix for XPath expression bug in Qualifier
+
+2006-03-22  scoder  <scoder@turi>
+
+	* html/MathDOM.html, setup.py: updated doc
+
+	* setup.py: updated Trove identifiers
+
+2006-03-21  scoder  <scoder@turi>
+
+	* setup.py: updated download link
+
+	* setup.py: do not include .cvsignore files
+
+	* html/MathDOM.html: updated MathDOM.html for 0.7
+
+	* README: updated README for 0.7
+
+	* ChangeLog: 0.7
 
 	* setup.py: removed unused packages
 

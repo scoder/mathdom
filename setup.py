@@ -6,7 +6,7 @@ except ImportError:
     from distutils.extension import Extension
 import sys, os
 
-VERSION  = '0.7'
+VERSION  = '0.7.1'
 PACKAGE_NAME = 'mathdom'
 PACKAGES = ['mathml', 'mathml.utils', 'mathml.schema']
 PACKAGE_DATA = {}
@@ -185,6 +185,10 @@ you need a different representation, add a converter, but don't change
 the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
+
+New in version 0.7.1:
+
+- bug fix for operator qualifiers
 
 New in version 0.7:
 
