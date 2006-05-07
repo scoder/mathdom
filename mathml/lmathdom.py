@@ -113,7 +113,7 @@ def SiblingElement(_element, _tag, *args, **kwargs):
 class Qualifier(object):
     def __init__(self, name, default_node=None):
         self.name = _NAMESPACE + name
-        self.__xpath = u'../math:*[local-name() = %s]' % name
+        self.__xpath = '../math:' + name
         self.__default_node = default_node
 
     def __find_qualifier(self, node, default=None):
