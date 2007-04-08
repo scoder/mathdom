@@ -186,6 +186,10 @@ the model of your application. Literal terms are connected through an
 intermediate AST step that makes writing converters for
 SQL/Java/Lisp/*your-favourite* easy.
 
+New in version 0.7.2:
+
+- works with (and requires) lxml 1.3 or later
+
 New in version 0.7.1:
 
 - bug fix for operator qualifiers
@@ -253,4 +257,4 @@ New in version 0.6:
     ],
 
     keywords = "MathML xml DOM math parser validator"
-    )
+)

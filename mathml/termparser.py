@@ -17,10 +17,10 @@ Usage examples:
 >>> term = '.1*pi+2*(1+3i)-5.6-6*-1/sin(-45*a.b) + 1'
 >>> parsed_ast = term_parsers['infix_term'].parse(term)
 >>> parsed_ast
-('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', Complex(1+3j))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', (u'const:integer', -1), (u'sin', ('*', (u'const:integer', -45), (u'name', u'a.b')))))), (u'const:integer', 1))
+('+', ('*', ('const:real', Decimal("0.1")), ('name', 'pi')), ('-', ('*', ('const:integer', 2), ('const:complex', Complex(1+3j))), ('const:real', Decimal("5.6")), ('*', ('const:integer', 6), ('/', ('const:integer', -1), ('sin', ('*', ('const:integer', -45), ('name', 'a.b')))))), ('const:integer', 1))
 >>> converter = tree_converters['infix']
->>> converter.build(parsed_ast)
-u'0.1 * pi + 2 * (1+3i) - 5.6 - 6 * -1 / sin ( -45 * a.b ) + 1'
+>>> print converter.build(parsed_ast)
+0.1 * pi + 2 * (1+3i) - 5.6 - 6 * -1 / sin ( -45 * a.b ) + 1
 
 
 * boolean terms:
@@ -28,10 +28,10 @@ u'0.1 * pi + 2 * (1+3i) - 5.6 - 6 * -1 / sin ( -45 * a.b ) + 1'
 >>> bool_term = '%(term)s = 1 or %(term)s > 5 and true' % {'term':term}
 >>> parsed_ast = term_parsers['infix_bool'].parse(bool_term)
 >>> parsed_ast
-(u'or', ('=', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', Complex(1+3j))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', (u'const:integer', -1), (u'sin', ('*', (u'const:integer', -45), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 1)), (u'and', ('>', ('+', ('*', (u'const:real', Decimal("0.1")), (u'name', u'pi')), ('-', ('*', (u'const:integer', 2), (u'const:complex', Complex(1+3j))), (u'const:real', Decimal("5.6")), ('*', (u'const:integer', 6), ('/', (u'const:integer', -1), (u'sin', ('*', (u'const:integer', -45), (u'name', u'a.b')))))), (u'const:integer', 1)), (u'const:integer', 5)), (u'const:bool', True)))
+('or', ('=', ('+', ('*', ('const:real', Decimal("0.1")), ('name', 'pi')), ('-', ('*', ('const:integer', 2), ('const:complex', Complex(1+3j))), ('const:real', Decimal("5.6")), ('*', ('const:integer', 6), ('/', ('const:integer', -1), ('sin', ('*', ('const:integer', -45), ('name', 'a.b')))))), ('const:integer', 1)), ('const:integer', 1)), ('and', ('>', ('+', ('*', ('const:real', Decimal("0.1")), ('name', 'pi')), ('-', ('*', ('const:integer', 2), ('const:complex', Complex(1+3j))), ('const:real', Decimal("5.6")), ('*', ('const:integer', 6), ('/', ('const:integer', -1), ('sin', ('*', ('const:integer', -45), ('name', 'a.b')))))), ('const:integer', 1)), ('const:integer', 5)), ('const:bool', True)))
 >>> converter = tree_converters['postfix']
->>> converter.build(parsed_ast)
-u'0.1 pi * 2 (1+3i) * 5.6 6 -1 -45 a.b * sin / * - - 1 + + 1 = 0.1 pi * 2 (1+3i) * 5.6 6 -1 -45 a.b * sin / * - - 1 + + 5 > true and or'
+>>> print converter.build(parsed_ast)
+0.1 pi * 2 (1+3i) * 5.6 6 -1 -45 a.b * sin / * - - 1 + + 1 = 0.1 pi * 2 (1+3i) * 5.6 6 -1 -45 a.b * sin / * - - 1 + + 5 > true and or
 
 """
 
@@ -80,23 +80,23 @@ class TermTokenizer(object):
     string, int, float, bool.
     """
     def _parse_attribute(self, s,p,t):
-        return [ (u'name',           self._filter_name( t[0] )) ]
+        return [ ('name',           self._filter_name( t[0] )) ]
     def _parse_int(self, s,p,t):
-        return [ (u'const:integer',  int(t[0])) ]
+        return [ ('const:integer',  int(t[0])) ]
     def _parse_float(self, s,p,t):
-        return [ (u'const:real',     Decimal(t[0])) ]
+        return [ ('const:real',     Decimal(t[0])) ]
     def _parse_bool(self, s,p,t):
-        return [ (u'const:bool',     t[0].lower() == 'true') ]
+        return [ ('const:bool',     t[0].lower() == 'true') ]
     def _parse_string(self, s,p,t):
-        return [ (u'const:string',   t[0][1:-1]) ]
+        return [ ('const:string',   t[0][1:-1]) ]
     def _parse_enotation(self, s,p,t):
-        return [ (u'const:enotation', ENotation(t[0], t[1])) ]
+        return [ ('const:enotation', ENotation(t[0], t[1])) ]
     def _parse_complex(self, s,p,t):
         if len(t) == 1:
             value = Complex(0, Decimal(t[0]))
         else:
             value = Complex(Decimal(t[0]), Decimal(t[1]))
-        return [ (u'const:complex', value) ]
+        return [ ('const:complex', value) ]
 
     _CONSTANT_MAP = {}
     def _filter_name(self, name):
@@ -150,7 +150,7 @@ class TermTokenizer(object):
 
     @cached
     def p_bool(self):
-        p_bool = CaselessKeyword(u'true') | CaselessKeyword(u'false')
+        p_bool = CaselessKeyword('true') | CaselessKeyword('false')
         p_bool.setName('bool')
         p_bool.setParseAction(self._parse_bool)
         return p_bool
@@ -208,20 +208,20 @@ class TermParserBase(ArithmeticParserBase):
     OPERATOR_ORDER = TERM_OPERATOR_ORDER
 
     interval_closure = {
-        ('[', ']') : u'closed',
-        ('[', ')') : u'closed-open',
-        ('(', ']') : u'open-closed',
-        ('(', ')') : u'open'
+        ('[', ']') : 'closed',
+        ('[', ')') : 'closed-open',
+        ('(', ']') : 'open-closed',
+        ('(', ')') : 'open'
         }
 
     def _parse_operator(self, s,p,t):
         return t
     def _parse_interval(self, s,p,t):
-        return [ (u'interval:%s' % self.interval_closure[(t[0], t[-1])],) + tuple(t[1:-1]) ]
+        return [ ('interval:%s' % self.interval_closure[(t[0], t[-1])],) + tuple(t[1:-1]) ]
     def _parse_function(self, s,p,t):
         return [ tuple(t) ]
     def _parse_case(self, s,p,t):
-        return [ (u'case',) + tuple(t) ]
+        return [ ('case',) + tuple(t) ]
 
     def p_operator(self, operator):
         p_op = Literal(operator)
@@ -280,13 +280,13 @@ class InfixTermParser(TermParserBase):
         return p_function
 
     def p_case(self, p_arithmetic_exp, p_bool_expression):
-        p_case = (Suppress(CaselessKeyword(u'CASE') + Optional(CaselessKeyword(u'WHEN'))) +
+        p_case = (Suppress(CaselessKeyword('CASE') + Optional(CaselessKeyword('WHEN'))) +
                   p_bool_expression +
-                  Suppress(CaselessKeyword(u'THEN')) + p_arithmetic_exp +
+                  Suppress(CaselessKeyword('THEN')) + p_arithmetic_exp +
                   # Optional => undefined values in expressions!
                   #Optional(Suppress(CaselessKeyword('ELSE')) + _p_exp) +
-                  Suppress(CaselessKeyword(u'ELSE')) + p_arithmetic_exp +
-                  Suppress(CaselessKeyword(u'END'))
+                  Suppress(CaselessKeyword('ELSE')) + p_arithmetic_exp +
+                  Suppress(CaselessKeyword('END'))
                   )
         p_case.setParseAction(self._parse_case)
         return p_case
@@ -297,13 +297,13 @@ class InfixTermParser(TermParserBase):
     p_arithmetic_tuple = Suppress('(') + p_arithmetic_list + Suppress(')')
 
     def _parse_int_list(s,p,t):
-        return [ (u'list:int',)    + tuple(t) ]
+        return [ ('list:int',)    + tuple(t) ]
     def _parse_float_list(s,p,t):
-        return [ (u'list:float',)  + tuple(t) ]
+        return [ ('list:float',)  + tuple(t) ]
     def _parse_string_list(s,p,t):
-        return [ (u'list:str',)    + tuple(t) ]
+        return [ ('list:str',)    + tuple(t) ]
     def _parse_bool_list(s,p,t):
-        return [ (u'list:bool',)   + tuple(t) ]
+        return [ ('list:bool',)   + tuple(t) ]
 
     # int list = (3,6,43,554)
     p_int_list = delimitedList(TermTokenizer.p_int | TermTokenizer.p_attribute)
@@ -348,13 +348,13 @@ class BoolParserBase(object):
     def _parse_bool_cmp_operator(self, s,p,t):
         return t
 
-    p_bool_and = CaselessKeyword(u'and')
-    p_bool_or  = CaselessKeyword(u'or')
-    p_bool_not = CaselessKeyword(u'not')
+    p_bool_and = CaselessKeyword('and')
+    p_bool_or  = CaselessKeyword('or')
+    p_bool_not = CaselessKeyword('not')
 
     @cached
     def p_bool_operator(self):
-        p_bool_operator = oneOf( u'= <>')
+        p_bool_operator = oneOf('= <>')
         p_bool_operator.setName('bool_op')
         p_bool_operator.setParseAction(self._parse_bool_cmp_operator)
         return p_bool_operator
@@ -368,7 +368,7 @@ class BoolParserBase(object):
 
     @cached
     def p_cmp_in(self):
-        p_cmp_in = CaselessKeyword(u'in') | CaselessKeyword(u'notin')
+        p_cmp_in = CaselessKeyword('in') | CaselessKeyword('notin')
         p_cmp_in.setParseAction(self._parse_cmp_operator)
         return p_cmp_in
 
@@ -460,7 +460,7 @@ class ListParser(object):
         self.p_item = p_item
 
     def _parse_list(self, s,p,t):
-        return [ (u'list',)  + tuple(t) ]
+        return [ ('list',)  + tuple(t) ]
 
     @cached
     def p_list(self):
@@ -475,8 +475,6 @@ def build_parser(parser):
     parseString = parser.parseString
     class Parser(object):
         def parse(self, term):
-            if not isinstance(term, unicode):
-                term = unicode(term, 'ascii')
             return parseString(term)[0]
     return Parser()
 

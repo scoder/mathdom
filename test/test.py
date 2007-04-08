@@ -214,7 +214,7 @@ def build_test_class(term_type, terms, mathdom):
     next_test_name = ("test_%05d" % i for i in count()).next
 
     invalid_terms = sorted( term for (term, result) in terms.iteritems()
-                            if isinstance(result, types.ClassType) )
+                            if isinstance(result, (types.ClassType, type)) )
 
     tests =  dict(
         (next_test_name(), build_parser_test(term))
@@ -222,7 +222,7 @@ def build_test_class(term_type, terms, mathdom):
          )
 
     valid_terms = sorted( (term, result) for (term, result) in terms.iteritems()
-                          if not isinstance(result, types.ClassType) )
+                          if not isinstance(result, (types.ClassType, type)) )
 
     tests.update(
         (next_test_name(), build_term_test_method(test_method, term, result))

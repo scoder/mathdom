@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-__all__ = [ 'MathDOM', 'Apply', 'Constant', 'Identifier' ]
+__all__ = [ 'MathDOM', 'Apply', 'Constant', 'Identifier', 'Name',
+            'Qualifier', 'Element', 'SubElement', 'SiblingElement' ]
 
 __doc__ = """
 ElementTree/lxml based implementation of MathDOM.
@@ -18,7 +19,7 @@ Apply, Identifier and Constant create new 'math:apply', 'math:ci' and
 
 >>> from mathml.lmathdom import MathDOM, Apply, Identifier, Constant
 >>> doc = MathDOM.fromString('a+3*(4+5)', 'infix_term')
->>> for apply_tag in doc.xpath(u'//math:apply[math:plus]'): # add 1 to every sum
+>>> for apply_tag in doc.xpath('//math:apply[math:plus]'): # add 1 to every sum
 ...     c = Constant(apply_tag, 1, 'integer')
 >>> doc.serialize('infix')
 u'a + 3 * ( 4 + 5 + 1 ) + 1'
@@ -26,12 +27,11 @@ u'a + 3 * ( 4 + 5 + 1 ) + 1'
 """
 
 import sys
-from StringIO   import StringIO
+from StringIO import StringIO
 
-from lxml.etree import (parse, ElementBase, Element, SubElement, ElementTree,
-                        FunctionNamespace, Namespace, XSLT, XMLSchema, RelaxNG,
-                        XPathElementEvaluator)
-from lxml.sax   import ElementTreeContentHandler
+from lxml import etree as _etree
+from lxml.etree import SubElement, ElementTree
+from lxml.sax import ElementTreeContentHandler
 
 from mathml           import MATHML_NAMESPACE_URI, UNARY_FUNCTIONS
 from mathml.xmlterm   import SaxTerm, dom_to_tree, serialize_dom
@@ -96,18 +96,21 @@ MML_SCHEMA = None
 MML_RNG = SCHEMAS.get('mathml2')
 
 
-_MATH_NS_DICT = {u'math' : MATHML_NAMESPACE_URI}
-_NAMESPACE    = u"{%s}" % MATHML_NAMESPACE_URI
+_MATH_NS_DICT = {'math' : MATHML_NAMESPACE_URI}
+_NAMESPACE    = "{%s}" % MATHML_NAMESPACE_URI
+_ANCESTOR_XPATH = _etree.XPath('ancestor::math:*[1]', _MATH_NS_DICT)
+
+_parser = _etree.XMLParser()
+_parser.setElementClassLookup(_etree.ElementNamespaceClassLookup())
 
 
 def _tag_name(local_name):
     return u"{%s}%s" % (MATHML_NAMESPACE_URI, local_name)
 
-def _parent(node):
-    return node.xpath(u'ancestor::math:*[1]', _MATH_NS_DICT)[0]
-
 def SiblingElement(_element, _tag, *args, **kwargs):
-    return SubElement(_parent(_element), _tag, *args, **kwargs)
+    return SubElement(_element.getparent(), _tag, *args, **kwargs)
+
+Element = _parser.makeelement
 
 
 class Qualifier(object):
@@ -151,7 +154,7 @@ class Qualifier(object):
             qualifier_node.append(value)
 
 
-class MathElement(ElementBase):
+class MathElement(_etree.ElementBase):
     @property
     def localName(self):
         tagname = self.tag
@@ -172,15 +175,16 @@ class MathElement(ElementBase):
         if not other_namespaces or other_namespaces == _MATH_NS_DICT:
             return self._xpath(expression)
 
-        evaluator = XPathElementEvaluator(self, other_namespaces)
-        evaluator.registerNamespace(u'math', MATHML_NAMESPACE_URI)
-        return super(ElementBase, self).xpath(expression, other_namespaces)
+        evaluator = _etree.XPathElementEvaluator(self, other_namespaces)
+        evaluator.registerNamespace('math', MATHML_NAMESPACE_URI)
+        return super(MathElement, self).xpath(expression, other_namespaces)
 
     def _xpath(self, xpath):
         try:
             evaluate = self.__xpath_evaluator
         except AttributeError:
-            evaluate = self.__xpath_evaluator = XPathElementEvaluator(self, _MATH_NS_DICT).evaluate
+            evaluate = self.__xpath_evaluator = \
+                       _etree.XPathElementEvaluator(self, _MATH_NS_DICT).evaluate
         return evaluate(xpath)
 
     def mathtype(self):
@@ -190,25 +194,25 @@ class MathElement(ElementBase):
         return self.localName == name
 
     def iteridentifiers(self):
-        return iter(self._xpath(u'.//math:ci'))
+        return iter(self._xpath('.//math:ci'))
 
     def iteridentifiernames(self):
-        return (e.name() for e in self._xpath(u'.//math:ci'))
+        return (e.name() for e in self._xpath('.//math:ci'))
 
     def iterconstants(self):
-        return iter(self._xpath(u'.//math:true|.//math:false|.//math:exponentiale|.//math:imaginaryi|.//math:pi'))
+        return iter(self._xpath('.//math:true|.//math:false|.//math:exponentiale|.//math:imaginaryi|.//math:pi'))
 
     def iterconstantnames(self):
         return (e.localName for e in self.iterconstants())
 
     def iternumbers(self):
-        return iter(self._xpath(u'.//math:cn'))
+        return iter(self._xpath('.//math:cn'))
 
     def iternumbervalues(self):
-        return (n.value() for n in self._xpath(u'.//math:cn'))
+        return (n.value() for n in self._xpath('.//math:cn'))
 
     def iteroperators(self):
-        return (e[0] for e in self._xpath(u'.//math:apply') if len(e))
+        return (e[0] for e in self._xpath('.//math:apply') if len(e))
 
 
 class SerializableMathElement(MathElement):
@@ -240,34 +244,34 @@ class SerializableMathElement(MathElement):
             return root
 
 class math_math(SerializableMathElement):
-    IMPLEMENTS = u'math'
+    IMPLEMENTS = 'math'
 
 class math_cn(SerializableMathElement):
-    IMPLEMENTS = u'cn'
+    IMPLEMENTS = 'cn'
     VALID_TYPES = ("real", "integer", "rational")
     def __repr__(self):
         name = self.localName
-        return u"<%s type='%s'>%r</%s>" % (name, self.get(u'type', u'real'), self.value(), name)
+        return u"<%s type='%s'>%r</%s>" % (name, self.get('type', 'real'), self.value(), name)
 
     def valuetype(self):
-        typeattr = self.get(u'type')
+        typeattr = self.get('type')
         if typeattr:
             return typeattr
         elif self.text and len(self) == 0:
             value = self.text
-            for type_test, name in ((int, u'integer'), (float, u'real')):
+            for type_test, name in ((int, 'integer'), (float, 'real')):
                 try:
                     type_test(value)
                     return name
                 except ValueError:
                     pass
         else:
-            return u'real' # MathML default!
+            return 'real' # MathML default!
 
     def set_rational(self, *value):
         "Set the rational value of this element"
         value = Rational(*value)
-        self._set_tuple_value(u'rational', (value.num_str, value.denom_str))
+        self._set_tuple_value('rational', (value.num_str, value.denom_str))
 
     def set_complex(self, value):
         "Set the complex value of this element"
@@ -275,14 +279,14 @@ class math_cn(SerializableMathElement):
             tuple_value = (value.real_str, value.imag_str)
         except AttributeError:
             tuple_value = (unicode(value.real), unicode(value.imag))
-        self._set_tuple_value(u'complex', tuple_value)
+        self._set_tuple_value('complex', tuple_value)
 
     def value(self):
         "Returns the numerical value with the correct type."
         valuetype = self.valuetype()
-        if valuetype == u'integer':
+        if valuetype == 'integer':
             return int(self.text)
-        elif valuetype == u'real':
+        elif valuetype == 'real':
             return Decimal(self.text)
 
         try:
@@ -294,9 +298,9 @@ class math_cn(SerializableMathElement):
     def _set_tuple_value(self, type_name, value_tuple):
         self.clear()
         self.text = unicode(value_tuple[0])
-        sep = SubElement(self, _tag_name(u'sep'))
+        sep = SubElement(self, _tag_name('sep'))
         sep.tail  = unicode(value_tuple[1])
-        self.set(u'type', type_name)
+        self.set('type', type_name)
 
     def set_value(self, value, type_name=None):
         """Set the value of this element. May have to specify a MathML
@@ -312,20 +316,20 @@ class math_cn(SerializableMathElement):
                 type_name = value.TYPE_NAME
             except AttributeError:
                 if isinstance(value, (int, long)):
-                    type_name = u'integer'
+                    type_name = 'integer'
                 elif isinstance(value, float):
-                    type_name = u'real'
+                    type_name = 'real'
                 else:
                     raise TypeError, "Invalid value type. Please specify type name."
         elif type_name not in self.VALID_TYPES:
             raise ValueError, "Unsupported type name."
         self.clear()
-        self.set(u'type', type_name)
+        self.set('type', type_name)
         self.text = unicode(value)
 
 
 class math_ci(SerializableMathElement):
-    IMPLEMENTS = u'ci'
+    IMPLEMENTS = 'ci'
     def __repr__(self):
         name = self.localName
         return u"<%s>%r</%s>" % (name, self[0], name)
@@ -344,7 +348,7 @@ class math_ci(SerializableMathElement):
 
 
 class math_apply(SerializableMathElement):
-    IMPLEMENTS = u'apply'
+    IMPLEMENTS = 'apply'
     def operator(self):
         return self[0]
 
@@ -376,15 +380,15 @@ class math_apply(SerializableMathElement):
 
 
 class math_minus(MathElement):
-    IMPLEMENTS = u'minus'
+    IMPLEMENTS = 'minus'
     def is_negation(self):
-        return len(_parent(self)) == 2
+        return len(self.getparent()) == 2
 
 
 class math_interval(MathElement):
-    IMPLEMENTS = u'interval'
+    IMPLEMENTS = 'interval'
     def closure(self):
-        return self.get(u'closure') or 'closed'
+        return self.get('closure') or 'closed'
 
 
 class math_unary_function(MathElement):
@@ -394,17 +398,19 @@ class math_unary_function(MathElement):
 
 
 class math_log(math_unary_function):
-    IMPLEMENTS = u'log'
-    default_logbase = Element(u'{%s}cn' % MATHML_NAMESPACE_URI)
-    default_logbase.text = u'10'
-    logbase = Qualifier(u'logbase', default_logbase)
-    del default_logbase
+    IMPLEMENTS = 'log'
+    # logbase setup later
 
 
 class MathDOM(object):
     def __init__(self, etree=None):
+        self._parser = parser = _etree.XMLParser(remove_blank_text=True)
+        parser.setElementClassLookup(
+            _etree.ElementNamespaceClassLookup())
+        self._Element = parser.makeelement
+
         if etree is None:
-            root = Element(u'{%s}math' % MATHML_NAMESPACE_URI)
+            root = self._Element('{%s}math' % MATHML_NAMESPACE_URI)
             etree = ElementTree(root)
         self._etree = etree
 
@@ -418,7 +424,7 @@ class MathDOM(object):
     @classmethod
     def fromSax(cls, input, sax_parser):
         "Build a MathDOM from input using sax_parser."
-        content_handler = ElementTreeContentHandler()
+        content_handler = ElementTreeContentHandler(makeelement=Element)
         sax_parser.setContentHandler(content_handler)
         sax_parser.parse( cls.__build_input_file(input) )
         return cls( content_handler.etree )
@@ -433,7 +439,7 @@ class MathDOM(object):
         """Build a MathDOM from the file-like object input using the
         stringterm parser for input_type."""
         if input_type == 'mathml':
-            return cls( ElementTree(file=input) )
+            return cls( ElementTree(file=input, parser=self._parser) )
         else:
             sax_parser = SaxTerm.for_input_type(input_type)
             return cls.fromSax(input, sax_parser())
@@ -446,8 +452,8 @@ class MathDOM(object):
             out = sys.stdout
         tree = self._etree
         try:
-            if tree.getroot().mathtype() != u'math':
-                math_root = Element(u'{%s}math' % MATHML_NAMESPACE_URI)
+            if tree.getroot().mathtype() != 'math':
+                math_root = self._Element('{%s}math' % MATHML_NAMESPACE_URI)
                 math_root[:] = [tree.getroot()]
                 tree = ElementTree(math_root)
         except AttributeError:
@@ -525,9 +531,9 @@ class MathDOM(object):
         """Create a new apply tag given the name of a function or
         operator and (optionally) its paremeter elements as further
         arguments."""
-        apply_tag = Element(u'{%s}apply' % MATHML_NAMESPACE_URI)
+        apply_tag = self._Element('{%s}apply' % MATHML_NAMESPACE_URI)
         function_tag = SubElement(apply_tag,
-                                  u'{%s}%s' % (MATHML_NAMESPACE_URI, name))
+                                  '{%s}%s' % (MATHML_NAMESPACE_URI, name))
         if args:
             if len(args) == 1 and isinstance(args[0], (list, tuple)):
                 args = args[0]
@@ -539,13 +545,13 @@ class MathDOM(object):
 
     def createConstant(self, value):
         "Create a new constant with the given value."
-        cn_tag = Element(u'{%s}cn' % MATHML_NAMESPACE_URI)
+        cn_tag = self._Element('{%s}cn' % MATHML_NAMESPACE_URI)
         cn_tag.set_value(value)
         return cn_tag
 
     def createIdentifier(self, name):
         "Create a new identifier that represents the given name."
-        ci_tag = Element(u'{%s}ci' % MATHML_NAMESPACE_URI)
+        ci_tag = self._Element('{%s}ci' % MATHML_NAMESPACE_URI)
         ci_tag.text = name
         return ci_tag
 
@@ -555,7 +561,7 @@ def Constant(parent, value, type_name=None):
     the given constant."""
     if isinstance(parent, MathDOM):
         parent = parent.getroot()
-    cn_tag = SubElement(parent, u'{%s}cn' % MATHML_NAMESPACE_URI)
+    cn_tag = SubElement(parent, '{%s}cn' % MATHML_NAMESPACE_URI)
     cn_tag.set_value(value, type_name)
     return cn_tag
 
@@ -564,7 +570,7 @@ def Identifier(parent, name):
     the given name."""
     if isinstance(parent, MathDOM):
         parent = parent.getroot()
-    ci_tag = SubElement(parent, u'{%s}ci' % MATHML_NAMESPACE_URI)
+    ci_tag = SubElement(parent, '{%s}ci' % MATHML_NAMESPACE_URI)
     ci_tag.text = name
     return ci_tag
 
@@ -577,9 +583,9 @@ def Apply(parent, name, *args):
     if isinstance(parent, MathDOM):
         parent = parent.getroot()
     apply_tag    = SubElement(parent,
-                              u'{%s}apply' % MATHML_NAMESPACE_URI)
+                              '{%s}apply' % MATHML_NAMESPACE_URI)
     function_tag = SubElement(apply_tag,
-                              u'{%s}%s' % (MATHML_NAMESPACE_URI, name))
+                              '{%s}%s' % (MATHML_NAMESPACE_URI, name))
     if args:
         if len(args) == 1 and isinstance(args[0], (list, tuple)):
             args = args[0]
@@ -595,6 +601,12 @@ def xslt_serialize(_, nodes, output_type):
 
 
 # register namespace implementation
+
+def setup_logbase():
+    # set up "math_log.logbase"
+    _default_logbase = _parser.makeelement('{%s}cn' % MATHML_NAMESPACE_URI)
+    _default_logbase.text = '10'
+    math_log.logbase = Qualifier('logbase', _default_logbase)
 
 def register_classes(global_class_dict):
     classes = [ (cls.IMPLEMENTS.split(), cls)
@@ -615,11 +627,14 @@ def register_classes(global_class_dict):
         class_dict.update((tag, cls) for tag in tags)
     class_dict[None] = MathElement
 
-    lxml_math_namespace = Namespace(MATHML_NAMESPACE_URI)
+    lxml_math_namespace = _etree.Namespace(MATHML_NAMESPACE_URI)
     lxml_math_namespace.update(class_dict)
 
-    function_namespace = FunctionNamespace(MATHML_NAMESPACE_URI)
+    function_namespace = _etree.FunctionNamespace(MATHML_NAMESPACE_URI)
     function_namespace['serialize'] = xslt_serialize
+
+setup_logbase()
+del setup_logbase
 
 register_classes(vars())
 del register_classes
