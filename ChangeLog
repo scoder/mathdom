@@ -1,14 +1,39 @@
-2006-05-07  scoder  <scoder@turi>
+2008-03-11  scoder  <scoder@users.sourceforge.net>
+
+	* mathml/lmathdom.py: make it work with lxml 2.0
+
+	* setup.py: 0.8
+
+	* mathml/lmathdom.py: make it work with lxml 2.0
+
+2008-03-11  scoder  <scoder@users.sourceforge.net>
+
+	* mathml/lmathdom.py: make it work with lxml 2.0
+
+2007-04-08  scoder  <scoder@users.sourceforge.net>
+
+	* mathml/lmathdom.py, mathml/termparser.py, setup.py, test/test.py:
+	make it work with lxml after 1.0 (now requires 1.3+)
+
+2006-05-07  scoder  <scoder@users.sourceforge.net>
+
+	* ChangeLog, setup.py: 0.7.1
+
+	* html/MathDOM.html: small HTML updates
 
 	* mathml/lmathdom.py: fix for XPath expression bug in Qualifier
 
-2006-03-22  scoder  <scoder@turi>
+2006-05-07  scoder  <scoder@users.sourceforge.net>
+
+	* mathml/lmathdom.py: fix for XPath expression bug in Qualifier
+
+2006-03-22  scoder  <scoder@users.sourceforge.net>
 
 	* html/MathDOM.html, setup.py: updated doc
 
 	* setup.py: updated Trove identifiers
 
-2006-03-21  scoder  <scoder@turi>
+2006-03-21  scoder  <scoder@users.sourceforge.net>
 
 	* setup.py: updated download link
 
