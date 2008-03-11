@@ -98,11 +98,9 @@ MML_RNG = SCHEMAS.get('mathml2')
 
 _MATH_NS_DICT = {'math' : MATHML_NAMESPACE_URI}
 _NAMESPACE    = "{%s}" % MATHML_NAMESPACE_URI
-_ANCESTOR_XPATH = _etree.XPath('ancestor::math:*[1]', _MATH_NS_DICT)
+_ANCESTOR_XPATH = _etree.XPath('ancestor::math:*[1]', namespaces=_MATH_NS_DICT)
 
-_parser = _etree.XMLParser()
-_parser.setElementClassLookup(_etree.ElementNamespaceClassLookup())
-
+_parser = _etree.XMLParser(remove_blank_text=True)
 
 def _tag_name(local_name):
     return u"{%s}%s" % (MATHML_NAMESPACE_URI, local_name)
@@ -175,16 +173,19 @@ class MathElement(_etree.ElementBase):
         if not other_namespaces or other_namespaces == _MATH_NS_DICT:
             return self._xpath(expression)
 
-        evaluator = _etree.XPathElementEvaluator(self, other_namespaces)
+        evaluator = _etree.XPathElementEvaluator(
+            self, namespaces=other_namespaces)
         evaluator.registerNamespace('math', MATHML_NAMESPACE_URI)
-        return super(MathElement, self).xpath(expression, other_namespaces)
+        return super(MathElement, self).xpath(
+            expression, namespaces=other_namespaces)
 
     def _xpath(self, xpath):
         try:
             evaluate = self.__xpath_evaluator
         except AttributeError:
             evaluate = self.__xpath_evaluator = \
-                       _etree.XPathElementEvaluator(self, _MATH_NS_DICT).evaluate
+                _etree.XPathElementEvaluator(
+                self, namespaces=_MATH_NS_DICT).evaluate
         return evaluate(xpath)
 
     def mathtype(self):
@@ -405,8 +406,7 @@ class math_log(math_unary_function):
 class MathDOM(object):
     def __init__(self, etree=None):
         self._parser = parser = _etree.XMLParser(remove_blank_text=True)
-        parser.setElementClassLookup(
-            _etree.ElementNamespaceClassLookup())
+        _register_mathml_classes(parser)
         self._Element = parser.makeelement
 
         if etree is None:
@@ -459,7 +459,7 @@ class MathDOM(object):
         except AttributeError:
             pass
         #if indent: ??
-        self._etree.write(out, 'UTF-8')
+        self._etree.write(out, encoding='UTF-8')
 
     if 'pmathml' in STYLESHEET_TRANSFORMERS or 'pmathml2' in STYLESHEET_TRANSFORMERS:
         def to_pmathml(self, *args, **kwargs):
@@ -501,7 +501,7 @@ class MathDOM(object):
             elif output_format in STYLESHEET_TRANSFORMERS:
                 etree = self.xsltify(output_format, **kwargs)
                 out = StringIO()
-                etree.write(out, 'UTF-8')
+                etree.write(out, encoding='UTF-8')
                 return out.getvalue()
         return serialize_dom(self._etree, output_format, converter)
 
@@ -516,7 +516,7 @@ class MathDOM(object):
             other_namespaces.update(_MATH_NS_DICT)
         else:
             other_namespaces = _MATH_NS_DICT
-        return self._etree.xpath(expression, other_namespaces)
+        return self._etree.xpath(expression, namespaces=other_namespaces)
 
     def xslt(self, stylesheet):
         "Run an XSLT stylesheet against the MathDOM."
@@ -599,18 +599,20 @@ def Apply(parent, name, *args):
 def xslt_serialize(_, nodes, output_type):
     return ''.join( node.serialize(output_type) for node in nodes )
 
+_etree.FunctionNamespace(MATHML_NAMESPACE_URI)['serialize'] = xslt_serialize
 
-# register namespace implementation
 
-def setup_logbase():
+# global setup, register namespace implementation
+
+def _setup_logbase():
     # set up "math_log.logbase"
-    _default_logbase = _parser.makeelement('{%s}cn' % MATHML_NAMESPACE_URI)
+    _default_logbase = Element('{%s}cn' % MATHML_NAMESPACE_URI)
     _default_logbase.text = '10'
     math_log.logbase = Qualifier('logbase', _default_logbase)
 
-def register_classes(global_class_dict):
+def _prepare_mathml_classes():
     classes = [ (cls.IMPLEMENTS.split(), cls)
-                for cls in global_class_dict.values()
+                for cls in _all_names
                 if isinstance(cls, type)
                 and issubclass(cls, MathElement)
                 and hasattr(cls, 'IMPLEMENTS') ]
@@ -627,14 +629,20 @@ def register_classes(global_class_dict):
         class_dict.update((tag, cls) for tag in tags)
     class_dict[None] = MathElement
 
-    lxml_math_namespace = _etree.Namespace(MATHML_NAMESPACE_URI)
-    lxml_math_namespace.update(class_dict)
+    return class_dict
 
-    function_namespace = _etree.FunctionNamespace(MATHML_NAMESPACE_URI)
-    function_namespace['serialize'] = xslt_serialize
+_setup_logbase()
+del _setup_logbase
 
-setup_logbase()
-del setup_logbase
+_all_names = vars().values()
+_all_mathml_classes = _prepare_mathml_classes()
+del _all_names, _prepare_mathml_classes
 
-register_classes(vars())
-del register_classes
+def _register_mathml_classes(parser):
+    lookup = _etree.ElementNamespaceClassLookup()
+    parser.setElementClassLookup(lookup)
+
+    lxml_math_namespace = lookup.get_namespace(MATHML_NAMESPACE_URI)
+    lxml_math_namespace.update(_all_mathml_classes)
+
+_register_mathml_classes(_parser)
