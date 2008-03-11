@@ -640,7 +640,7 @@ del _all_names, _prepare_mathml_classes
 
 def _register_mathml_classes(parser):
     lookup = _etree.ElementNamespaceClassLookup()
-    parser.setElementClassLookup(lookup)
+    parser.set_element_class_lookup(lookup)
 
     lxml_math_namespace = lookup.get_namespace(MATHML_NAMESPACE_URI)
     lxml_math_namespace.update(_all_mathml_classes)
