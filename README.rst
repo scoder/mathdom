@@ -7,8 +7,7 @@ Stefan Behnel <scoder@users.sourceforge.net>
 
 See LICENSE file for licensing.
 
-You can find the latest version at
-http://mathdom.sourceforge.net
+You can find the latest source version at http://github.com/scoder/mathdom
 
 
 What is MathDOM?
@@ -45,23 +44,24 @@ Simple, isn't it ?
 Current status:
 ---------------
 
-MathDOM 0.7 is now in a stable state. There have not been any bug reports for
-quite a while.  Future enhancements may regard the compatibility of the two
-implementations (PyXML and lxml).  They will likely come closer based on the
-ElementTree API.
+MathDOM 0.8 is now in a stable state. There have not been any bug
+reports for quite a while.  In the future, it is likely that the PyXML
+implementation gets dropped in favour of plain lxml support, as PyXML
+is a dead project.
 
 
 Regarding lxml:
 ---------------
 
-The lxml based implementation shares most of the code with the PyXML one, but
-replaces the DOM implementation with a patched version of lxml [3], an XML API
-similar to ElementTree [4], implemented on top of libxml2 [5]. That makes it
-much faster than the pure Python implementation (just try test/test.py for a
-comparison) and it supports more XML features, like XSLT and XInclude.
+The lxml based implementation shares most of the code with the PyXML
+one, but replaces the DOM implementation with lxml [3], an XML API
+similar to ElementTree [4], implemented on top of libxml2 [5]. That
+makes it much faster than the pure Python implementation (just try
+test/test.py for a comparison) and it supports more XML features, like
+XSLT and XInclude.
 
-MathDOM 0.7 should work out-of-the-box with lxml 0.9 and better.  Get it from
-http://codespeak.net/lxml/
+MathDOM 0.8 should work ok with a recent version of lxml.  Get it from
+http://lxml.de/
 
 
 PyXML vs. lxml:
