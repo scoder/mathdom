@@ -120,7 +120,7 @@ if HAS_LMATHDOM:
 
 manifest = open(os.path.join(root_dir, 'MANIFEST.in'), 'w')
 manifest.write("""
-include setup.py MANIFEST.in README LICENSE ChangeLog
+include setup.py MANIFEST.in README.rst LICENSE ChangeLog
 exclude html/*
 include html/*.png html/*.css html/MathDOM.html
 recursive-include test *.py
