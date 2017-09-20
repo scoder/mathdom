@@ -1,9 +1,8 @@
 MathDOM - handling terms through a MathML DOM in Python
 -------------------------------------------------------
 
-I'd be really glad to hear if this is useful. And maybe you have an idea how
-to make it better. :) Just send me an email:
-Stefan Behnel <scoder@users.sourceforge.net>
+This is a toy project that is no longer maintained.
+If you want something real and production ready, use `SymPy <http://www.sympy.org/>`_.
 
 See LICENSE file for licensing.
 
