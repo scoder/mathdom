@@ -27,9 +27,9 @@ u'a + 3 * ( 4 + 5 + 1 ) + 1'
 """
 
 import sys
-from StringIO import StringIO
+import io
 
-from lxml import etree as _etree
+import lxml.etree as _etree
 from lxml.etree import SubElement, ElementTree
 from lxml.sax import ElementTreeContentHandler
 
@@ -404,22 +404,29 @@ class math_log(math_unary_function):
 
 
 class MathDOM(object):
-    def __init__(self, etree=None):
+    def __init__(self, etree=None, file=None):
         self._parser = parser = _etree.XMLParser(remove_blank_text=True)
         _register_mathml_classes(parser)
         self._Element = parser.makeelement
 
         if etree is None:
-            root = self._Element('{%s}math' % MATHML_NAMESPACE_URI)
-            etree = ElementTree(root)
+            if file is None:
+                root = self._Element('{%s}math' % MATHML_NAMESPACE_URI)
+                etree = ElementTree(root)
+            else:
+                etree = _etree.parse(file, parser=parser)
+        else:
+            assert file is None
         self._etree = etree
 
     @staticmethod
     def __build_input_file(source):
         if hasattr(source, 'read'):
             return source
+        elif isinstance(source, bytes):
+            return io.BytesIO(source)
         else:
-            return StringIO(source)
+            return io.StringIO(source)
 
     @classmethod
     def fromSax(cls, input, sax_parser):
@@ -439,7 +446,7 @@ class MathDOM(object):
         """Build a MathDOM from the file-like object input using the
         stringterm parser for input_type."""
         if input_type == 'mathml':
-            return cls( ElementTree(file=input, parser=self._parser) )
+            return cls(file=input)
         else:
             sax_parser = SaxTerm.for_input_type(input_type)
             return cls.fromSax(input, sax_parser())
@@ -495,12 +502,12 @@ class MathDOM(object):
             if output_format is None:
                 output_format = 'mathml'
             if output_format == 'mathml':
-                out = StringIO()
+                out = io.BytesIO()
                 self.toMathml(out, False)
                 return out.getvalue()
             elif output_format in STYLESHEET_TRANSFORMERS:
                 etree = self.xsltify(output_format, **kwargs)
-                out = StringIO()
+                out = io.BytesIO()
                 etree.write(out, encoding='UTF-8')
                 return out.getvalue()
         return serialize_dom(self._etree, output_format, converter)
